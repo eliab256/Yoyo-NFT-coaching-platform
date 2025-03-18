@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {VRFConsumerBaseV2Plus, VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev";
+import {VRFConsumerBaseV2Plus, VRFV2PlusClient} from "@chainlink/contracts/";
 
 contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     //variables
@@ -20,11 +20,11 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
 
     //modifiers
     modifier onlyOwner() {
-        if(msg.sender != owner){
+        if (msg.sender != owner) {
             revert YoyoNft__NotOwner();
-        }  _;
+        }
+        _;
     }
-
 
     //functions
     constructor() ERC721("Yoyo Collection", "YOYO") {
@@ -33,8 +33,10 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
 
     function mintNft() public {}
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory){
-         if (tokenId == 0 || tokenId > 125) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        if (tokenId == 0 || tokenId > 125) {
             revert YoyoNft__TokenIdDoesNotExist();
         }
         return s_tokenIdToUri[tokenId];
