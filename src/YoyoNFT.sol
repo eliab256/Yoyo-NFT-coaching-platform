@@ -2,9 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {VRFConsumerBaseV2Plus, VRFV2PlusClient} from "@chainlink/contracts/";
+import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
 
 contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
+    using VRFV2PlusClient for VRFV2PlusClient.RandomWordsRequest;
+
     //variables
     uint256 private s_tokenCounter;
     uint256 private constant maxNftSupply = 125;
