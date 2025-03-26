@@ -107,4 +107,27 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         }
         return s_tokenIdToUri[tokenId];
     }
+
+    /**
+     * @dev This is the function that Chainlink VRF node
+     * calls to send the money to the random winner.
+     */
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal override {
+        //da modificare (copiata dal contratto raffle)
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+        address payable recentWinner = s_players[indexOfWinner];
+        s_recentWinner = recentWinner;
+        s_players = new address payable[](0);
+        s_raffleState = RaffleState.OPEN;
+        s_lastTimeStamp = block.timestamp;
+        emit WinnerPicked(recentWinner);
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        // require(success, "Transfer failed");
+        if (!success) {
+            revert Raffle__TransferFailed();
+        }
+    }
 }
