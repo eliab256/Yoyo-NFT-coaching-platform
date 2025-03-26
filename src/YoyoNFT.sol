@@ -1,14 +1,49 @@
-// SPDX-License-Identifier: UNLICENSED
+// Layout of Contract:
+// version
+// imports
+// errors
+// interfaces, libraries, contracts
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// view & pure functions
+
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
+
+/**
+ * @title A Yoga NFT collection
+ * @author Elia Bordoni
+ * @notice This contract is for creating a NFT collection with random features
+ * @dev This implements the Chainlink VRF Version 2 and ERC271 standard
+ */
 
 contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     using VRFV2PlusClient for VRFV2PlusClient.RandomWordsRequest;
-  //variables
+
+    /* Errors */
+    error YoyoNft__NotOwner();
+    error YoyoNft__TokenIdDoesNotExist();
+
+    /* Type declarations */
+
+    /* State variables */
     //uint256 private constant ROLL_IN_PROGRESS = 42;
-    IVFRCoordinatorV2Plus private immutable  i_vrfCoordinator;
+    IVFRCoordinatorV2Plus private immutable i_vrfCoordinator;
     address private immutable i_subscriptionId;
     bytes32 private immutable i_keyHash;
     uint32 private immutable i_callbackGasLimit;
@@ -24,13 +59,10 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     mapping(uint256 => address) private s_rollers;
     mapping(address => uint256) private s_results;
 
-    //events
+    /* Events */
+    event Nftminted(uint256 indexed tokenId, address minter);
 
-    //errors
-    error YoyoNft__NotOwner();
-    error YoyoNft__TokenIdDoesNotExist();
-
-    //modifiers
+    /* Modifiers */
     modifier onlyOwner() {
         if (msg.sender != i_owner) {
             revert YoyoNft__NotOwner();
@@ -38,8 +70,13 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         _;
     }
 
-    //functions
-    constructor(address _vrfCoordinator, bytes32 _keyHash, uint256 _subscriptionId, uint32 _callbackGasLimit, string memory _baseURI
+    /* Functions */
+    constructor(
+        address _vrfCoordinator,
+        bytes32 _keyHash,
+        uint256 _subscriptionId,
+        uint32 _callbackGasLimit,
+        string memory _baseURI
     ) ERC721("Yoyo Collection", "YOYO") VRFConsumerBaseV2Plus(_vrfCoordinator) {
         i_vrfCoordinator = IVFRCoordinatorV2Plus(_vrfCoordinator);
         i_owner = msg.sender;
@@ -50,9 +87,19 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         s_tokenCounter = 0;
     }
 
-    function mintNft() public {}
+    function mintNft(address to, uint256 tokenId) public {
+        _safeMint(to, tokenId);
+    }
 
-    function tokenURI(
+    function transferNFT(
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public override {
+        _safeTransfer(to, tokenId, data);
+    }
+
+    function getNftUri(
         uint256 tokenId
     ) public view override returns (string memory) {
         if (tokenId == 0 || tokenId > 125) {
