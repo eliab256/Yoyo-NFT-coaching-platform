@@ -22,8 +22,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
+//import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+//import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
 
 /**
  * @title A Yoga NFT collection
@@ -38,6 +38,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     /* Errors */
     error YoyoNft__NotOwner();
     error YoyoNft__TokenIdDoesNotExist();
+    error YoyoNft__AllNFTsHaveBeenMinted();
 
     /* Type declarations */
 
@@ -50,16 +51,17 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     uint16 private constant REQUEST_CONFIRMATION = 3;
     uint32 private constant NUM_WORDS = 1;
     uint256 private s_tokenCounter;
-    uint256 private constant MAX_NFT_SUPPLY = 125;
+    uint256 private constant MAX_NFT_SUPPLY = 100;
     uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
     address private immutable i_owner;
 
     mapping(uint256 => string) private s_tokenIdToUri;
-    mapping(uint256 => address) private s_rollers;
-    mapping(address => uint256) private s_results;
+    mapping(uint256 => address) private s_requestIdToSender;
+    //mapping(address => uint256) private s_results;
 
     /* Events */
+    event NftRequested(uint256 indexed requestId, address indexed sender);
     event Nftminted(uint256 indexed tokenId, address minter);
 
     /* Modifiers */
@@ -85,6 +87,25 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         i_callbackGasLimit = _callbackGasLimit;
         s_baseURI = _baseURI;
         s_tokenCounter = 0;
+    }
+
+    function requestNFT() public{
+        if(s_tokenCounter >= MAX_NFT_SUPPLY){
+            revert YoyoNft__AllNFTsHaveBeenMinted();
+        }
+        requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_keyHash,
+                subId: i_subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATION,
+                callbackGasLimit:  i_callbackGasLimit,
+                numWords: NUM_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+            })
+        );
+
+        s_requestIdToSender[requestId] = msg.sender;
+        emit NftRequested(requestId, msg.sender);
     }
 
     function mintNft(address to, uint256 tokenId) public {
