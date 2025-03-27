@@ -22,8 +22,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-//import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {VRFConsumerBaseV2Plus, VRFV2PlusClient, IVFRCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8";
 
 /**
  * @title A Yoga NFT collection
@@ -89,8 +89,8 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         s_tokenCounter = 0;
     }
 
-    function requestNFT() public{
-        if(s_tokenCounter >= MAX_NFT_SUPPLY){
+    function requestNFT() public {
+        if (s_tokenCounter >= MAX_NFT_SUPPLY) {
             revert YoyoNft__AllNFTsHaveBeenMinted();
         }
         requestId = s_vrfCoordinator.requestRandomWords(
@@ -98,9 +98,11 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
                 keyHash: i_keyHash,
                 subId: i_subscriptionId,
                 requestConfirmations: REQUEST_CONFIRMATION,
-                callbackGasLimit:  i_callbackGasLimit,
+                callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
             })
         );
 
