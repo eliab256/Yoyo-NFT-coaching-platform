@@ -42,6 +42,10 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     error YoyoNft__InvalidRequest();
     error YoyoNft__AllNFTsHaveBeenMinted();
     error YoyoNft__NotEnoughPayment();
+    error YoyoNft__WithdrawFailed();
+    error YoyoNft__ThisContractDoesntAcceptDeposit();
+    error YoyoNft__CallValidFunctionToInteractWithContract();
+
 
 
     /* Type declarations */
@@ -68,6 +72,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     /* Events */
     event NftRequested(uint256 indexed requestId, address indexed sender);
     event Nftminted(uint256 indexed tokenId, address minter);
+    event YoyoNft__WithdrawCompleted(uint256 amount, uint256 timestamp);
+    event YoyoNft__DepositCompleted(uint256 amount, uint256 timestamp);
+    event YoyoNft__TokenIdAssigned(uint256 tokenId, string tokenUri);
 
     /* Modifiers */
     modifier onlyOwner() {
@@ -165,5 +172,29 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
             }    
         }
         revert YoyoNft__AllNFTsHaveBeenMinted();
+    }
+
+    function withdraw() public onlyOwner {
+        bool success = payable(i_Owner).send(address(this).balance);
+        if(success){
+        emit YoyoNft__WithdrawCompleted(address(this).balance, block.timestamp);}
+        else {
+            revert YoyoNft__WithdrawFailed();
+        }
+    }
+
+    function deposit() public payable onlyOwner{
+        if(msg.value == 0) {
+            revert YoyoNft__ValueCantBeZero();
+        }
+        emit YoyoNft__DepositCompleted(msg.value, block.timestamp);
+    }
+
+    receive() external payable {
+        revert YoyoNft__ThisContractDoesntAcceptDeposit();
+    }
+
+    fallback() external payable {
+        revert YoyoNft__CallValidFunctionToInteractWithContract();
     }
 }
