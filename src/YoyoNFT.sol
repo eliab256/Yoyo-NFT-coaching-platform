@@ -46,10 +46,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     error YoyoNft__ThisContractDoesntAcceptDeposit();
     error YoyoNft__CallValidFunctionToInteractWithContract();
 
-
-
     /* Type declarations */
-
 
     /* State variables */
     IVFRCoordinatorV2Plus private immutable i_vrfCoordinator;
@@ -101,7 +98,15 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         s_tokenCounter = 0;
     }
 
-    function requestNFT(bool _enableNativepayment) public payable{
+    receive() external payable {
+        revert YoyoNft__ThisContractDoesntAcceptDeposit();
+    }
+
+    fallback() external payable {
+        revert YoyoNft__CallValidFunctionToInteractWithContract();
+    }
+
+    function requestNFT(bool _enableNativepayment) public payable {
         if (s_tokenCounter >= MAX_NFT_SUPPLY) {
             revert YoyoNft__AllNFTsHaveBeenMinted();
         }
@@ -116,7 +121,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
                 callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: _enableNativepayment})
+                    VRFV2PlusClient.ExtraArgsV1({
+                        nativePayment: _enableNativepayment
+                    })
                 )
             })
         );
@@ -126,7 +133,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     }
 
     function changeMintPrice(uint256 newPrice) public onlyOwner {
-        if(newPrice == 0) {
+        if (newPrice == 0) {
             revert YoyoNft__ValueCantBeZero();
         }
         mintPriceEth = newPrice;
@@ -137,22 +144,38 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 tokenId,
         bytes memory data
     ) public override {
-        _safeTransfer(to, tokenId, data);
+        _safeTransfer(msg.sender, to, tokenId, data);
     }
 
-    function getNftUri(
-        uint256 tokenId
-    ) public view override returns (string memory) {
-        if (tokenId == 0 || tokenId > 125) {
-            revert YoyoNft__TokenIdDoesNotExist();
+    function withdraw() public onlyOwner {
+        bool success = payable(i_Owner).send(address(this).balance);
+        if (success) {
+            emit YoyoNft__WithdrawCompleted(
+                address(this).balance,
+                block.timestamp
+            );
+        } else {
+            revert YoyoNft__WithdrawFailed();
         }
-        return s_tokenIdToUri[tokenId];
     }
 
-    function fulfillRandomWords(uint256 _requestId, uint256[] calldata _randomWords) internal override {
-        if(s_requestIdToSender[_requestId] = address(0)){YoyoNft__InvalidRequest();}
+    function deposit() public payable onlyOwner {
+        if (msg.value == 0) {
+            revert YoyoNft__ValueCantBeZero();
+        }
+        emit YoyoNft__DepositCompleted(msg.value, block.timestamp);
+    }
+
+    function fulfillRandomWords(
+        uint256 _requestId,
+        uint256[] calldata _randomWords
+    ) internal override {
+        if (s_requestIdToSender[_requestId] = address(0)) {
+            YoyoNft__InvalidRequest();
+        }
         address nftOwner = s_requestIdToSender[_requestId];
-        uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY) + MIN_TOKEN_ID;
+        uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY) +
+            MIN_TOKEN_ID;
         uint256 tokenId = findAvailableTokenId(candidateTokenId);
         s_tokensMinted[tokenId] = true;
         s_tokenCounter++;
@@ -161,40 +184,29 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         emit Nftminted(tokenId, nftOwner);
     }
 
-    function findAvailableTokenId(uint256 _candidateTokenId) internal view returns (uint256) {
+    function findAvailableTokenId(
+        uint256 _candidateTokenId
+    ) internal view returns (uint256) {
         for (uint256 i = 0; i < MAX_NFT_SUPPLY; i++) {
             if (!s_tokensMinted[_candidateTokenId]) {
                 return _candidateTokenId;
             }
-            _candidateTokenId = (_candidateTokenId % MAX_NFT_SUPPLY) + MIN_TOKEN_ID;
+            _candidateTokenId =
+                (_candidateTokenId % MAX_NFT_SUPPLY) +
+                MIN_TOKEN_ID;
             if (_candidateTokenId == 0) {
                 _candidateTokenId = MIN_TOKEN_ID;
-            }    
+            }
         }
         revert YoyoNft__AllNFTsHaveBeenMinted();
     }
 
-    function withdraw() public onlyOwner {
-        bool success = payable(i_Owner).send(address(this).balance);
-        if(success){
-        emit YoyoNft__WithdrawCompleted(address(this).balance, block.timestamp);}
-        else {
-            revert YoyoNft__WithdrawFailed();
+    function getNftUri(
+        uint256 tokenId
+    ) public view override returns (string memory) {
+        if (tokenId < MIN_TOKEN_ID || tokenId > MAX_NFT_SUPPLY) {
+            revert YoyoNft__TokenIdDoesNotExist();
         }
-    }
-
-    function deposit() public payable onlyOwner{
-        if(msg.value == 0) {
-            revert YoyoNft__ValueCantBeZero();
-        }
-        emit YoyoNft__DepositCompleted(msg.value, block.timestamp);
-    }
-
-    receive() external payable {
-        revert YoyoNft__ThisContractDoesntAcceptDeposit();
-    }
-
-    fallback() external payable {
-        revert YoyoNft__CallValidFunctionToInteractWithContract();
+        return s_tokenIdToUri[tokenId];
     }
 }
