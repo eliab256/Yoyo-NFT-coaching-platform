@@ -229,26 +229,32 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     }
 
     function findMyNFT() public view returns (string[] memory) {
-        uint256 count = 0;
-        string[] memory uris = new string[](s_tokenCounter); 
-        
-        for (uint256 tokenId = MIN_TOKEN_ID; tokenId <= MAX_NFT_SUPPLY; tokenId++) {
-            if (tokenIdToOwner[tokenId] == msg.sender) {
-                uris[count] = tokenURI(tokenId);
-                count++;
+    uint256 count = 0;
+    string[] memory uris = new string[](s_tokenCounter);
+    
+    for (uint256 tokenId = MIN_TOKEN_ID; tokenId <= MAX_NFT_SUPPLY; tokenId++) {
+        if (s_tokensMinted[tokenId]) {
+            try this.ownerOf(tokenId) returns (address owner) {
+                if (owner == msg.sender) {
+                    uris[count] = tokenURI(tokenId);
+                    count++;
+                }
+            } catch {
+                continue;
             }
         }
-
-        if (count == 0) {
-            revert YoYoNft__YouAreNotANftOwner();
-        }
-
-        string[] memory finalUris = new string[](count);
-        for (uint256 i = 0; i < count; i++) {
-            finalUris[i] = uris[i];
-        }
-        return finalUris;
     }
+    
+    if (count == 0) {
+        revert YoYoNft__YouAreNotANftOwner();
+    }
+    
+    string[] memory finalUris = new string[](count);
+    for (uint256 i = 0; i < count; i++) {
+        finalUris[i] = uris[i];
+    }
+    return finalUris;
+}
 
     function getTotalMinted() public view returns (uint256) {
     return s_tokenCounter;
