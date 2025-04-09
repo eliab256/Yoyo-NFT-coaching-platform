@@ -29,7 +29,6 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-
 /**
  * @title A Yoga NFT collection
  * @author Elia Bordoni
@@ -56,8 +55,8 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     /* Type declarations */
 
     /* State variables */
-    IVFRCoordinatorV2Plus private immutable i_vrfCoordinator;
-    address private immutable i_subscriptionId;
+    IVRFCoordinatorV2Plus private immutable i_vrfCoordinator;
+    uint256 private immutable i_subscriptionId;
     bytes32 private immutable i_keyHash;
     uint32 private immutable i_callbackGasLimit;
     uint16 private constant REQUEST_CONFIRMATION = 3;
@@ -67,7 +66,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
     address private immutable i_owner;
-    uint256 public mintPriceEth = 0.001;
+    uint256 public mintPriceEth = 0.001 ether;
 
     mapping(uint256 => string) private s_tokenIdToUri;
     mapping(uint256 => address) private s_requestIdToSender;
@@ -103,7 +102,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint32 _callbackGasLimit,
         string memory _baseURI
     ) ERC721("Yoyo Collection", "YOYO") VRFConsumerBaseV2Plus(_vrfCoordinator) {
-        i_vrfCoordinator = IVFRCoordinatorV2Plus(_vrfCoordinator);
+        i_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
         i_owner = msg.sender;
         i_keyHash = _keyHash;
         i_subscriptionId = _subscriptionId;
@@ -120,11 +119,13 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         revert YoyoNft__CallValidFunctionToInteractWithContract();
     }
 
-    function requestNFT(bool _enableNativepayment) public payable notExceedNFTsMaxSupply{
+    function requestNFT(
+        bool _enableNativepayment
+    ) public payable notExceedNFTsMaxSupply {
         if (msg.value < mintPriceEth) {
             revert YoyoNft__NotEnoughPayment();
         }
-        requestId = s_vrfCoordinator.requestRandomWords(
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_keyHash,
                 subId: i_subscriptionId,
@@ -154,7 +155,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         address to,
         uint256 tokenId,
         bytes memory data
-    ) public override {
+    ) public {
         _safeTransfer(msg.sender, to, tokenId, data);
     }
 
@@ -193,7 +194,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
 
         _safeMint(nftOwner, tokenId);
 
-        string memory tokenUri = string(abi.encodePacked(s_baseURI, "/", Strings.toString(tokenId), ".json"));
+        string memory tokenUri = string(
+            abi.encodePacked(s_baseURI, "/", Strings.toString(tokenId), ".json")
+        );
         s_tokenIdToUri[tokenId] = tokenUri;
         emit YoyoNft__TokenIdAssigned(tokenId, tokenUri);
         emit Nftminted(tokenId, nftOwner);
@@ -229,36 +232,40 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     }
 
     function findMyNFT() public view returns (string[] memory) {
-    uint256 count = 0;
-    string[] memory uris = new string[](s_tokenCounter);
-    
-    for (uint256 tokenId = MIN_TOKEN_ID; tokenId <= MAX_NFT_SUPPLY; tokenId++) {
-        if (s_tokensMinted[tokenId]) {
-            try this.ownerOf(tokenId) returns (address owner) {
-                if (owner == msg.sender) {
-                    uris[count] = tokenURI(tokenId);
-                    count++;
+        uint256 count = 0;
+        string[] memory uris = new string[](s_tokenCounter);
+
+        for (
+            uint256 tokenId = MIN_TOKEN_ID;
+            tokenId <= MAX_NFT_SUPPLY;
+            tokenId++
+        ) {
+            if (s_tokensMinted[tokenId]) {
+                try this.ownerOf(tokenId) returns (address owner) {
+                    if (owner == msg.sender) {
+                        uris[count] = tokenURI(tokenId);
+                        count++;
+                    }
+                } catch {
+                    continue;
                 }
-            } catch {
-                continue;
             }
         }
+
+        if (count == 0) {
+            revert YoYoNft__YouAreNotANftOwner();
+        }
+
+        string[] memory finalUris = new string[](count);
+        for (uint256 i = 0; i < count; i++) {
+            finalUris[i] = uris[i];
+        }
+        return finalUris;
     }
-    
-    if (count == 0) {
-        revert YoYoNft__YouAreNotANftOwner();
-    }
-    
-    string[] memory finalUris = new string[](count);
-    for (uint256 i = 0; i < count; i++) {
-        finalUris[i] = uris[i];
-    }
-    return finalUris;
-}
 
     function getTotalMinted() public view returns (uint256) {
-    return s_tokenCounter;
-}
+        return s_tokenCounter;
+    }
 
     function getMintPrice() public view returns (uint256) {
         return mintPriceEth;
