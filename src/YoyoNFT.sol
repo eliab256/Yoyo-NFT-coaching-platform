@@ -1,24 +1,3 @@
-// Layout of Contract:
-// version
-// imports
-// errors
-// interfaces, libraries, contracts
-// Type declarations
-// State variables
-// Events
-// Modifiers
-// Functions
-
-// Layout of Functions:
-// constructor
-// receive function (if exists)
-// fallback function (if exists)
-// external
-// public
-// internal
-// private
-// view & pure functions
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -80,7 +59,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     event YoyoNft__TokenIdAssigned(uint256 tokenId, string tokenUri);
 
     /* Modifiers */
-    modifier onlyOwner() {
+    modifier yoyoOnlyOwner() {
         if (msg.sender != i_owner) {
             revert YoyoNft__NotOwner();
         }
@@ -96,18 +75,18 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
 
     /* Functions */
     constructor(
-        address _vrfCoordinator,
-        bytes32 _keyHash,
-        uint256 _subscriptionId,
-        uint32 _callbackGasLimit,
-        string memory _baseURI
-    ) ERC721("Yoyo Collection", "YOYO") VRFConsumerBaseV2Plus(_vrfCoordinator) {
-        i_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
+        address vrfCoordinator,
+        bytes32 keyHash,
+        uint256 subscriptionId,
+        uint32 callbackGasLimit,
+        string memory baseURI
+    ) ERC721("Yoyo Collection", "YOYO") VRFConsumerBaseV2Plus(vrfCoordinator) {
+        i_vrfCoordinator = IVRFCoordinatorV2Plus(vrfCoordinator);
         i_owner = msg.sender;
-        i_keyHash = _keyHash;
-        i_subscriptionId = _subscriptionId;
-        i_callbackGasLimit = _callbackGasLimit;
-        s_baseURI = _baseURI;
+        i_keyHash = keyHash;
+        i_subscriptionId = subscriptionId;
+        i_callbackGasLimit = callbackGasLimit;
+        s_baseURI = baseURI;
         s_tokenCounter = 0;
     }
 
@@ -144,7 +123,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         emit NftRequested(requestId, msg.sender);
     }
 
-    function changeMintPrice(uint256 newPrice) public onlyOwner {
+    function changeMintPrice(uint256 newPrice) public yoyoOnlyOwner {
         if (newPrice == 0) {
             revert YoyoNft__ValueCantBeZero();
         }
@@ -159,7 +138,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         _safeTransfer(msg.sender, to, tokenId, data);
     }
 
-    function withdraw() public onlyOwner {
+    function withdraw() public yoyoOnlyOwner {
         bool success = payable(i_owner).send(address(this).balance);
         if (success) {
             emit YoyoNft__WithdrawCompleted(
@@ -171,7 +150,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         }
     }
 
-    function deposit() public payable onlyOwner {
+    function deposit() public payable yoyoOnlyOwner {
         if (msg.value == 0) {
             revert YoyoNft__ValueCantBeZero();
         }
@@ -183,7 +162,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256[] calldata _randomWords
     ) internal override {
         if (s_requestIdToSender[_requestId] == address(0)) {
-            YoyoNft__InvalidRequest();
+            revert YoyoNft__InvalidRequest();
         }
         address nftOwner = s_requestIdToSender[_requestId];
         uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY) +
