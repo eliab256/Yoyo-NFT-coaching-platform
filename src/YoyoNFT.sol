@@ -34,17 +34,17 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     /* Type declarations */
 
     /* State variables */
-    IVRFCoordinatorV2Plus private immutable i_vrfCoordinator;
-    uint256 private immutable i_subscriptionId;
-    bytes32 private immutable i_keyHash;
-    uint32 private immutable i_callbackGasLimit;
+    IVRFCoordinatorV2Plus public immutable i_vrfCoordinator;
+    uint256 public immutable i_subscriptionId;
+    bytes32 public immutable i_keyHash;
+    uint32 public immutable i_callbackGasLimit;
     uint16 private constant REQUEST_CONFIRMATION = 3;
     uint32 private constant NUM_WORDS = 1;
     uint256 private s_tokenCounter;
     uint256 private constant MAX_NFT_SUPPLY = 100;
     uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
-    address private immutable i_owner;
+    address public immutable i_owner;
     uint256 public mintPriceEth = 0.001 ether;
 
     mapping(uint256 => string) private s_tokenIdToUri;
@@ -78,14 +78,14 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         address vrfCoordinator,
         bytes32 keyHash,
         uint256 subscriptionId,
-        uint32 callbackGasLimit,
+        uint256 callbackGasLimit,
         string memory baseURI
     ) ERC721("Yoyo Collection", "YOYO") VRFConsumerBaseV2Plus(vrfCoordinator) {
         i_vrfCoordinator = IVRFCoordinatorV2Plus(vrfCoordinator);
         i_owner = msg.sender;
         i_keyHash = keyHash;
         i_subscriptionId = subscriptionId;
-        i_callbackGasLimit = callbackGasLimit;
+        i_callbackGasLimit = uint32(callbackGasLimit);
         s_baseURI = baseURI;
         s_tokenCounter = 0;
     }

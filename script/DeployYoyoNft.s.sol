@@ -5,13 +5,24 @@ import {Script, console} from "forge-std/Script.sol";
 import {YoyoNft} from "../src/YoyoNFT.sol";
 
 contract DeployYoyoNft is Script {
-    YoyoNft public yoyoNft;
-
-    function setUp() public {}
+    //function setUp() public {}
+    address vrfCoordinator = vm.envAddress("VRF_COORDINATOR");
+    bytes32 keyHash = vm.envBytes32("KEY_HASH");
+    uint256 subscriptionId = vm.envUint("SUBSCRIPTION_ID");
+    uint256 callbackGasLimit = vm.envUint("CALLBACK_GAS_LIMIT");
+    string baseURI = vm.envString("BASE_URI");
 
     function run() external returns (YoyoNft) {
-        vm.startBroadcast();
-        yoyoNft = new YoyoNft();
+        address deployer = vm.envAddress("ANVIL_DEPLOYER_ADDRESS");
+
+        vm.startBroadcast(deployer);
+        YoyoNft yoyoNft = new YoyoNft(
+            vrfCoordinator,
+            keyHash,
+            subscriptionId,
+            callbackGasLimit,
+            baseURI
+        );
         vm.stopBroadcast();
 
         return yoyoNft;
