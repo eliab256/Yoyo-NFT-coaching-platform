@@ -30,6 +30,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     error YoyoNft__ThisContractDoesntAcceptDeposit();
     error YoyoNft__CallValidFunctionToInteractWithContract();
     error YoYoNft__YouAreNotANftOwner();
+    error YoyoNft__ContractBalanceIsZero();
 
     /* Type declarations */
 
@@ -41,11 +42,11 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     uint16 private constant REQUEST_CONFIRMATION = 3;
     uint32 private constant NUM_WORDS = 1;
     uint256 private s_tokenCounter;
-    uint256 private constant MAX_NFT_SUPPLY = 100;
+    uint256 public constant MAX_NFT_SUPPLY = 100;
     uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
     address public immutable i_owner;
-    uint256 public mintPriceEth = 0.001 ether;
+    uint256 private mintPriceEth = 0.001 ether;
 
     mapping(uint256 => string) private s_tokenIdToUri;
     mapping(uint256 => address) private s_requestIdToSender;
@@ -55,7 +56,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     event NftRequested(uint256 indexed requestId, address indexed sender);
     event Nftminted(uint256 indexed tokenId, address minter);
     event YoyoNft__WithdrawCompleted(uint256 amount, uint256 timestamp);
+    event YoyoNft__WithdrawIsFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__DepositCompleted(uint256 amount, uint256 timestamp);
+    event YoyoNft__DepositFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__TokenIdAssigned(uint256 tokenId, string tokenUri);
 
     /* Modifiers */
@@ -139,13 +142,21 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     }
 
     function withdraw() public yoyoOnlyOwner {
-        bool success = payable(i_owner).send(address(this).balance);
+        if (address(this).balance == 0) {
+            revert YoyoNft__ContractBalanceIsZero();
+        }
+        uint256 contractBalance = address(this).balance;
+        bool success = payable(i_owner).send(contractBalance);
         if (success) {
             emit YoyoNft__WithdrawCompleted(
-                address(this).balance,
+                contractBalance,
                 block.timestamp
             );
         } else {
+            emit YoyoNft__WithdrawIsFailed(
+                contractBalance,
+                block.timestamp
+            );
             revert YoyoNft__WithdrawFailed();
         }
     }
@@ -246,7 +257,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         return s_tokenCounter;
     }
 
-    function getMintPrice() public view returns (uint256) {
+    function getMintPriceEth() public view returns (uint256) {
         return mintPriceEth;
     }
 
