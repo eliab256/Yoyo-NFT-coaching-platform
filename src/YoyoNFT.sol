@@ -58,7 +58,6 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     event YoyoNft__WithdrawCompleted(uint256 amount, uint256 timestamp);
     event YoyoNft__WithdrawIsFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__DepositCompleted(uint256 amount, uint256 timestamp);
-    event YoyoNft__DepositFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__TokenIdAssigned(uint256 tokenId, string tokenUri);
 
     /* Modifiers */
