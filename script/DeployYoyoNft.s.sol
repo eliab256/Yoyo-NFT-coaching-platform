@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {YoyoNft} from "../src/YoyoNFT.sol";
+import {HelperConfig} from "./helperConfig.s.sol";
 
 contract DeployYoyoNft is Script {
     //function setUp() public {}
@@ -14,6 +15,9 @@ contract DeployYoyoNft is Script {
 
     function run() external returns (YoyoNft) {
         address deployer = vm.envAddress("ANVIL_DEPLOYER_ADDRESS");
+
+        HelperConfig helperConfig = new HelperConfig();
+        (address vrfCoordinator) = helperConfig.activeNetworkConfig.vrfCoordinator();
 
         vm.startBroadcast(deployer);
         YoyoNft yoyoNft = new YoyoNft(
