@@ -46,7 +46,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
     address public immutable i_owner;
-    uint256 private mintPriceEth = 0.001 ether;
+    uint256 private s_mintPriceEth = 0.002 ether;
 
     mapping(uint256 => string) private s_tokenIdToUri;
     mapping(uint256 => address) private s_requestIdToSender;
@@ -103,7 +103,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     function requestNFT(
         bool _enableNativepayment
     ) public payable notExceedNFTsMaxSupply {
-        if (msg.value < mintPriceEth) {
+        if (msg.value < s_mintPriceEth) {
             revert YoyoNft__NotEnoughPayment();
         }
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
@@ -129,7 +129,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         if (newPrice == 0) {
             revert YoyoNft__ValueCantBeZero();
         }
-        mintPriceEth = newPrice;
+        s_mintPriceEth = newPrice;
     }
 
     function transferNFT(
@@ -257,10 +257,16 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     }
 
     function getMintPriceEth() public view returns (uint256) {
-        return mintPriceEth;
+        return s_mintPriceEth;
     }
 
     function getBaseURI() public view returns (string memory) {
         return s_baseURI;
+    }
+
+    function getSenderFromRequestId(
+        uint256 requestId
+    ) public view returns (address) {
+        return s_requestIdToSender[requestId];
     }
 }

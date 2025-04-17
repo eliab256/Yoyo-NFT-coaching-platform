@@ -40,6 +40,11 @@ contract YoyoNftTest is Test {
         baseURI = config.baseURI;
 
         deployer = msg.sender;
+
+        vm.deal(deployer, STARING_BALANCE_DEPLOYER);
+        vm.deal(USER_1, STARING_BALANCE_PLAYER_1);
+        vm.deal(USER_2, STARING_BALANCE_PLAYER_2);
+        vm.deal(USER_NO_BALANCE, STARING_BALANCE_PLAYER_NO_BALANCE);
     }
 
 // Test the constructor parameters assignments
@@ -68,30 +73,33 @@ contract YoyoNftTest is Test {
         address(yoyoNft).call{value: 1 ether}("metadata");
     }
 
-    //test modifiers
-        function testIfYoyoOnlyOwnerModifierWorks() public {
+//test modifiers
+    function testIfYoyoOnlyOwnerModifierWorks() public {
         vm.startPrank(USER_1);
         vm.expectRevert(YoyoNft.YoyoNft__NotOwner.selector);
         yoyoNft.changeMintPrice(0.002 ether);
         vm.stopPrank();
     }
 
-    // function testIfNotExceedNFTsMaxSupplyModifierWorks() public {
-    //     vm.deal(user1, 1 ether);
-    //     uint256 memorySlot = 9;
-    //     vm.store(
-    //         address(yoyoNft),
-    //         bytes32(memorySlot),
-    //         bytes32(uint256(yoyoNft.MAX_NFT_SUPPLY())) 
-    //     );
-        
-    //     /*Now TokenCounter is equal to max nft supply, all nft are minted*/ 
-    //     /* ExternalUser try to mint a new token but function revert with custom error cause counter is at maximum */
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(YoyoNft.YoyoNft__AllNFTsHaveBeenMinted.selector);
-    //     yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(true);
-    //     vm.stopPrank();
-    // }
+    function testIfNotExceedNFTsMaxSupplyModifierWorks() public {
+        uint256 memorySlot = 9;
+        vm.store(
+            address(yoyoNft),
+            bytes32(memorySlot),
+            bytes32(uint256(yoyoNft.MAX_NFT_SUPPLY())) 
+        );
+        /*Now TokenCounter is equal to max nft supply, all nft are minted*/ 
+        assertEq(
+            vm.load(address(yoyoNft), bytes32(memorySlot)),
+            bytes32(uint256(yoyoNft.MAX_NFT_SUPPLY()))
+        );
+        /* ExternalUser try to mint a new token but function revert with custom error cause counter is at maximum */
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        vm.startPrank(USER_1);
+        vm.expectRevert(YoyoNft.YoyoNft__AllNFTsHaveBeenMinted.selector);
+        yoyoNft.requestNFT{value: mintPayment}(true);
+        vm.stopPrank();
+    } 
 
     // function testConsoleLogStorageSlots() public {
     //     for (uint256 i = 0; i < 20; i++) {
@@ -101,28 +109,37 @@ contract YoyoNftTest is Test {
     //         console.log("Slot", i, ":", intValue);
     //     }
     // }
+
 // Test requeste and minting NFT functions
-    function testIfRequestNFTWorksAndEmitsEvent() public {}
+    // function testIfRequestNFTWorksAndEmitsEvent() public {
+    //     uint256 mintPayment = yoyoNft.getMintPriceEth();
+    //     vm.startPrank(USER_1);
+    //     vm.expectEmit(true, true, true, true);
+    //     emit YoyoNft.NftRequested(0, USER_1);
+    //     yoyoNft.requestNFT{value: mintPayment}(true);
+    //     vm.stopPrank();
 
-    // function testIfRequestNFTRevertsIfValueisLessThanMintPrice() public{
-    //     vm.prank(deployer);
-    //     uint256 newMintPrice = 0.008 ether;
-    //     yoyoNft.changeMintPrice(newMintPrice);
-    //     vm.stopPrank();
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(YoyoNft.YoyoNft__NotEnoughPayment.selector);
-    //     yoyoNft.requestNFT{value: 0.001 ether}(true);
-    //     vm.stopPrank();
+    //     //assertEq(yoyoNft.getSenderFromRequestId(0), USER_1);
     // }
 
-//bisogno del mock di chainlinkvrf
-    // function testIfEnableNativePaymentWorks() public {
-    //     vm.deal(user1, 1 ether);
-    //     vm.startPrank(user1);
-    //     vm.expectRevert();
-    //     yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
-    //     vm.stopPrank();
-    // }
+    function testIfRequestNFTRevertsIfValueisLessThanMintPrice() public{
+        uint256 mintPayment = yoyoNft.getMintPriceEth()/2;
+        console.log("mintPayment", mintPayment);
+        console.log("mintPrice  ", yoyoNft.getMintPriceEth());
+        console.log("balance of user1", USER_1.balance);
+        vm.startPrank(USER_1);
+        vm.expectRevert(YoyoNft.YoyoNft__NotEnoughPayment.selector);
+        yoyoNft.requestNFT{value:mintPayment}(true);
+        vm.stopPrank();
+    }
+
+    function testIfEnableNativePaymentWorks() public {
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        vm.startPrank(USER_1);
+        vm.expectRevert();
+        yoyoNft.requestNFT{value: mintPayment}(false);
+        vm.stopPrank();
+    }
 
 
 
@@ -166,15 +183,15 @@ contract YoyoNftTest is Test {
     //     vm.deal(deployer, 1 ether);
     //     vm.deal(address(yoyoNft), 0.001 ether);
     //     vm.prank(deployer);
-    //     vm.expectEmit(true, true, true, true);
+    //     vm.expectEmit(false, false, false, false, address(yoyoNft));
     //     emit YoyoNft.YoyoNft__WithdrawIsFailed(0.001 ether, block.timestamp);
     //     yoyoNft.withdraw();
     // }
 
 // Test mintPrice functions
     function testIfChangeMintPriceWorks() public {
-        vm.prank(deployer);
-        uint256 newMintPrice = 0.002 ether;
+        vm.startPrank(deployer);
+        uint256 newMintPrice = yoyoNft.getMintPriceEth() + 0.001 ether;
         yoyoNft.changeMintPrice(newMintPrice);
         vm.stopPrank();
         assertEq(yoyoNft.getMintPriceEth(), newMintPrice);
