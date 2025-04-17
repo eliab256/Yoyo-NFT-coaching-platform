@@ -4,28 +4,46 @@ pragma solidity ^0.8.0;
 import {Test, console} from "forge-std/Test.sol";
 import {YoyoNft} from "../src/YoyoNFT.sol";
 import {DeployYoyoNft} from "../script/DeployYoyoNft.s.sol";
+import {HelperConfig} from "../script/helperConfig.s.sol";
 
 contract YoyoNftTest is Test {
-    YoyoNft yoyoNft;
+    YoyoNft public yoyoNft;
+    HelperConfig public helperConfig;
 
-    address deployer = vm.envAddress("ANVIL_DEPLOYER_ADDRESS");
-    address user1 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
-    address user2 = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
+    // NetworkConfig struct
+    address vrfCoordinator;
+    bytes32 keyHash;
+    uint256 subscriptionId;
+    uint256 callbackGasLimit;
+    string baseURI;
+    
+    // Test partecipants
+    address public deployer;
+    address public USER_1 = makeAddr("user 1");
+    address public USER_2 = makeAddr("user 2");
+    address public USER_NO_BALANCE = makeAddr("user no balance");
 
-
-    address vrfCoordinator = vm.envAddress("VRF_COORDINATOR");
-    bytes32 keyHash = vm.envBytes32("KEY_HASH");
-    uint256 subscriptionId = vm.envUint("SUBSCRIPTION_ID");
-    uint256 callbackGasLimit = vm.envUint("CALLBACK_GAS_LIMIT");
-    string baseURI = vm.envString("BASE_URI");
+    uint256 public constant STARING_BALANCE_DEPLOYER = 10 ether;
+    uint256 public constant STARING_BALANCE_PLAYER_1 = 10 ether;
+    uint256 public constant STARING_BALANCE_PLAYER_2 = 10 ether;
+    uint256 public constant STARING_BALANCE_PLAYER_NO_BALANCE = 0 ether;
+    
 
     function setUp() external {
-        DeployYoyoNft deployYoyoNft = new DeployYoyoNft();
-        yoyoNft = deployYoyoNft.run();
+        DeployYoyoNft contractDeployer = new DeployYoyoNft();
+        (yoyoNft, helperConfig) = contractDeployer.deployContract();
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        vrfCoordinator = config.vrfCoordinator;
+        keyHash = config.keyHash;   
+        subscriptionId = config.subscriptionId;
+        callbackGasLimit = config.callbackGasLimit;
+        baseURI = config.baseURI;
+
+        deployer = msg.sender;
     }
 
 // Test the constructor parameters assignments
-    function testConstructorParametersAssignments() public {
+    function testConstructorParametersAssignments() public  view{
         assertEq(yoyoNft.i_owner(), deployer);
         //assertEq(yoyoNft.i_vrfCoordinator(), vrfCoordinator);
         assertEq(yoyoNft.i_keyHash(), keyHash);
@@ -52,7 +70,7 @@ contract YoyoNftTest is Test {
 
     //test modifiers
         function testIfYoyoOnlyOwnerModifierWorks() public {
-        vm.startPrank(user1);
+        vm.startPrank(USER_1);
         vm.expectRevert(YoyoNft.YoyoNft__NotOwner.selector);
         yoyoNft.changeMintPrice(0.002 ether);
         vm.stopPrank();
@@ -170,7 +188,7 @@ contract YoyoNftTest is Test {
     }
 
 // Test Getters
-    function testTotalMintedGetter() public {
+    function testTotalMintedGetter() public view{
         assertEq(yoyoNft.getTotalMinted(), 0);
     }
 
@@ -182,7 +200,7 @@ contract YoyoNftTest is Test {
         assertEq(yoyoNft.getMintPriceEth(), newMintPrice);
     }
 
-    function testBaseURIGetter() public {
+    function testBaseURIGetter() public view{
         assertEq(yoyoNft.getBaseURI(), baseURI);
     }
 

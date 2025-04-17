@@ -50,6 +50,10 @@ contract HelperConfig is Script, CodeConstants{
         }
     }
 
+    function getConfig() public returns (NetworkConfig memory) {
+        return getConfigsByChainId(block.chainid);
+    }
+
 
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
         return NetworkConfig({
@@ -80,8 +84,8 @@ contract HelperConfig is Script, CodeConstants{
         NetworkConfig memory anvilConfig = NetworkConfig({
             vrfCoordinator: address(vrfCoordinatorMock),
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            subscriptionId: vm.envUint("SUBSCRIPTION_ID"),
-            callbackGasLimit: 200,
+            subscriptionId: 0, /*vm.envUint("SUBSCRIPTION_ID")*/
+            callbackGasLimit: 500000,
             baseURI: vm.envString("BASE_URI")
         });
         return anvilConfig;
