@@ -32,14 +32,10 @@ contract HelperConfig is Script, CodeConstants{
     mapping (uint256 => NetworkConfig) public networkConfigs;
 
     constructor() {
-        networkConfigs[SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
-        // if (block.chainid == 11155111) {
-        //     activeNetworkConfig = getSepoliaEthConfig();
-        // } else if (block.chainid == 31337) {
-        //     activeNetworkConfig = getAnvilConfig();
-        // } else {
-        //     revert("No active network config found");
-        // }
+        uint256 subscriptionIdFromEnv = getEnvSubscriptionId();
+        string memory baseURIFromEnv = getEnvBaseURI();
+        networkConfigs[SEPOLIA_CHAIN_ID] = getSepoliaEthConfig(subscriptionIdFromEnv, baseURIFromEnv);
+
     }
 
     function getConfigsByChainId(uint256 chainId) public returns (NetworkConfig memory) {
@@ -57,18 +53,26 @@ contract HelperConfig is Script, CodeConstants{
     }
 
 
-    function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
+    function getEnvSubscriptionId() public view returns (uint256) {
+        return vm.envUint("SUBSCRIPTION_ID");
+    }
+    function getEnvBaseURI() public view returns (string memory) {
+        return vm.envString("BASE_URI");
+    }
+
+    function getSepoliaEthConfig(uint256 _subscriptionId, string memory _baseURI) public pure returns (NetworkConfig memory) {
         return NetworkConfig({
             vrfCoordinator: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            subscriptionId: 0 /*vm.envUint("SUBSCRIPTION_ID")*/,
+            subscriptionId: _subscriptionId, /*"SUBSCRIPTION_ID" from .env*/
             callbackGasLimit: 500000,
-            baseURI: "baseURI", /*vm.envString("BASE_URI")*/
+            baseURI: _baseURI, /*"BASE_URI" from*/
             link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
         });
         
 
     }
+
 
     function getAnvilConfig()  public returns (NetworkConfig memory) {
         if(activeNetworkConfig.vrfCoordinator != address(0)) {
@@ -84,12 +88,13 @@ contract HelperConfig is Script, CodeConstants{
         );
         //Link Token deployment
         LinkToken linkToken = new LinkToken();
+        uint256 subscriptionId = vrfCoordinatorMock.createSubscription();
         vm.stopBroadcast();
 
         NetworkConfig memory anvilConfig = NetworkConfig({
             vrfCoordinator: address(vrfCoordinatorMock),
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            subscriptionId: 0, /*vm.envUint("SUBSCRIPTION_ID")*/
+            subscriptionId: subscriptionId,
             callbackGasLimit: 500000,
             baseURI: vm.envString("BASE_URI"),
             link: address(linkToken)
