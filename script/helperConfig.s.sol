@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {LinkToken} from "test/moks/LinkToken.sol";
 
 abstract contract CodeConstants {
     uint256 public constant SEPOLIA_CHAIN_ID = 11155111;
@@ -24,6 +25,7 @@ contract HelperConfig is Script, CodeConstants{
         uint256 subscriptionId;
         uint256 callbackGasLimit;
         string baseURI;
+        address link;
     }
 
     NetworkConfig public activeNetworkConfig;
@@ -61,7 +63,8 @@ contract HelperConfig is Script, CodeConstants{
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId: 0 /*vm.envUint("SUBSCRIPTION_ID")*/,
             callbackGasLimit: 500000,
-            baseURI: "baseURI" /*vm.envString("BASE_URI")*/
+            baseURI: "baseURI", /*vm.envString("BASE_URI")*/
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
         });
         
 
@@ -79,6 +82,8 @@ contract HelperConfig is Script, CodeConstants{
             MOCK_GAS_PRICE_LINK,
             MOCK_WEI_PER_UNIT_LINK
         );
+        //Link Token deployment
+        LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
 
         NetworkConfig memory anvilConfig = NetworkConfig({
@@ -86,7 +91,8 @@ contract HelperConfig is Script, CodeConstants{
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId: 0, /*vm.envUint("SUBSCRIPTION_ID")*/
             callbackGasLimit: 500000,
-            baseURI: vm.envString("BASE_URI")
+            baseURI: vm.envString("BASE_URI"),
+            link: address(linkToken)
         });
         return anvilConfig;
 

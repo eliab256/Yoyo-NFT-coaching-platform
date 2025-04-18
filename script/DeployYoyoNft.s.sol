@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Script, console} from "forge-std/Script.sol";
 import {YoyoNft} from "../src/YoyoNFT.sol";
 import {HelperConfig} from "./helperConfig.s.sol";
+import {CreateSubscription} from "./Interactions.s.sol";
 
 contract DeployYoyoNft is Script {
     //function setUp() public {}
@@ -15,6 +16,11 @@ contract DeployYoyoNft is Script {
     function deployContract() public returns(YoyoNft, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+
+        if(config.subscriptionId == 0) {
+            CreateSubscription createSubscription = new CreateSubscription();
+            (config.subscriptionId, config.vrfCoordinator) = createSubscription.createSubscription(config.vrfCoordinator);
+        }
 
         vm.startBroadcast();
         YoyoNft yoyoNft = new YoyoNft(

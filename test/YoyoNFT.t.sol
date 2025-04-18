@@ -124,9 +124,6 @@ contract YoyoNftTest is Test {
 
     function testIfRequestNFTRevertsIfValueisLessThanMintPrice() public{
         uint256 mintPayment = yoyoNft.getMintPriceEth()/2;
-        console.log("mintPayment", mintPayment);
-        console.log("mintPrice  ", yoyoNft.getMintPriceEth());
-        console.log("balance of user1", USER_1.balance);
         vm.startPrank(USER_1);
         vm.expectRevert(YoyoNft.YoyoNft__NotEnoughPayment.selector);
         yoyoNft.requestNFT{value:mintPayment}(true);
@@ -164,13 +161,13 @@ contract YoyoNftTest is Test {
 
     function testIfWithdrawWorksAndEmitsEvent() public {
         uint256 withdrawAmount = 0.001 ether;
-        vm.deal(deployer, 1 ether);
         vm.deal(address(yoyoNft), withdrawAmount);
         vm.prank(deployer);
         vm.expectEmit(true, true, true, true);
         emit YoyoNft.YoyoNft__WithdrawCompleted(withdrawAmount, block.timestamp);
         yoyoNft.withdraw();
         assertEq(address(yoyoNft).balance, 0);
+        assertEq(deployer.balance, STARING_BALANCE_DEPLOYER + withdrawAmount);
     }
 
     function testIfWithdrawRevertsIfContractBalanceIsZero() public {
@@ -179,14 +176,9 @@ contract YoyoNftTest is Test {
         yoyoNft.withdraw();
     }
 
-    // function testIfEmitEventOfFailedWithdraw() public {
-    //     vm.deal(deployer, 1 ether);
-    //     vm.deal(address(yoyoNft), 0.001 ether);
-    //     vm.prank(deployer);
-    //     vm.expectEmit(false, false, false, false, address(yoyoNft));
-    //     emit YoyoNft.YoyoNft__WithdrawIsFailed(0.001 ether, block.timestamp);
-    //     yoyoNft.withdraw();
-    // }
+    function testIfEmitEventOfFailedWithdraw() public {
+      
+    }
 
 // Test mintPrice functions
     function testIfChangeMintPriceWorks() public {
@@ -205,6 +197,23 @@ contract YoyoNftTest is Test {
     }
 
 // Test Getters
+
+    function testTokenURIGetterRevertDueToInvalidTokenId() public {
+        uint256 invalidTokenId = yoyoNft.MAX_NFT_SUPPLY() + 1;
+        vm.prank(USER_1);
+        vm.expectRevert(YoyoNft.YoyoNft__TokenIdDoesNotExist.selector);
+        yoyoNft.tokenURI(invalidTokenId);
+    }
+
+    function testTokenURIGetterRevertDueToTokenNotMintedId() public {
+        uint256 tokenId = yoyoNft.MAX_NFT_SUPPLY() -1;
+        vm.prank(USER_1);
+        vm.expectRevert(YoyoNft.YoyoNft__TokenNotMintedYet.selector);
+        yoyoNft.tokenURI(tokenId);
+    }
+
+    
+
     function testTotalMintedGetter() public view{
         assertEq(yoyoNft.getTotalMinted(), 0);
     }
