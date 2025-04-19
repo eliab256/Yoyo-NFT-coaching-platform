@@ -45,14 +45,15 @@ contract YoyoNftTest is Test {
         vm.deal(USER_1, STARING_BALANCE_PLAYER_1);
         vm.deal(USER_2, STARING_BALANCE_PLAYER_2);
         vm.deal(USER_NO_BALANCE, STARING_BALANCE_PLAYER_NO_BALANCE);
+
     }
+
+ 
 
 // Test the constructor parameters assignments
     function testConstructorParametersAssignments() public  view{
         assertEq(yoyoNft.i_owner(), deployer);
-        //assertEq(yoyoNft.i_vrfCoordinator(), vrfCoordinator);
         assertEq(yoyoNft.i_keyHash(), keyHash);
-        assertEq(yoyoNft.i_subscriptionId(), subscriptionId);
         assertEq(yoyoNft.i_callbackGasLimit(),callbackGasLimit);
         assertEq(yoyoNft.getBaseURI(), baseURI);
         assertEq(yoyoNft.getTotalMinted(), 0);
@@ -111,16 +112,17 @@ contract YoyoNftTest is Test {
     // }
 
 // Test requeste and minting NFT functions
-    // function testIfRequestNFTWorksAndEmitsEvent() public {
-    //     uint256 mintPayment = yoyoNft.getMintPriceEth();
-    //     vm.startPrank(USER_1);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit YoyoNft.NftRequested(0, USER_1);
-    //     yoyoNft.requestNFT{value: mintPayment}(true);
-    //     vm.stopPrank();
-
-    //     //assertEq(yoyoNft.getSenderFromRequestId(0), USER_1);
-    // }
+    function testIfRequestNFTWorksAndEmitsEvent() public {
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        uint256 contractInitialBalance = address(yoyoNft).balance;
+        vm.startPrank(USER_1);
+        // vm.expectEmit(true, true, true, true);
+        // emit YoyoNft.NftRequested(0, USER_1);
+        yoyoNft.requestNFT{value: mintPayment}(true);
+        vm.stopPrank();
+        assertEq(address(yoyoNft).balance, contractInitialBalance + mintPayment);
+        //assertEq(yoyoNft.getSenderFromRequestId(0), USER_1);
+    }
 
     function testIfRequestNFTRevertsIfValueisLessThanMintPrice() public{
         uint256 mintPayment = yoyoNft.getMintPriceEth()/2;

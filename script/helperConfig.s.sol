@@ -81,20 +81,20 @@ contract HelperConfig is Script, CodeConstants{
   
         //VRF Mock deployment
         vm.startBroadcast();
-        VRFCoordinatorV2_5Mock vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(
+        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
             MOCK_BASE_FEE,
             MOCK_GAS_PRICE_LINK,
             MOCK_WEI_PER_UNIT_LINK
         );
         //Link Token deployment
         LinkToken linkToken = new LinkToken();
-        uint256 subscriptionId = vrfCoordinatorMock.createSubscription();
+        uint256 mockSubscriptionId = vrfCoordinatorV2_5Mock.createSubscription();
         vm.stopBroadcast();
 
         NetworkConfig memory anvilConfig = NetworkConfig({
-            vrfCoordinator: address(vrfCoordinatorMock),
+            vrfCoordinator: address(vrfCoordinatorV2_5Mock),
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            subscriptionId: subscriptionId,
+            subscriptionId: mockSubscriptionId,
             callbackGasLimit: 500000,
             baseURI: vm.envString("BASE_URI"),
             link: address(linkToken)
