@@ -100,9 +100,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         revert YoyoNft__CallValidFunctionToInteractWithContract();
     }
 
-    function requestNFT(
-        bool _enableNativepayment
-    ) public payable notExceedNFTsMaxSupply {
+    function requestNFT() public payable notExceedNFTsMaxSupply {
         if (msg.value < s_mintPriceEth) {
             revert YoyoNft__NotEnoughPayment();
         }
@@ -115,7 +113,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
                 numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
                     VRFV2PlusClient.ExtraArgsV1({
-                        nativePayment: _enableNativepayment
+                        nativePayment: true
                     })
                 )
             })

@@ -98,7 +98,7 @@ contract YoyoNftTest is Test {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
         vm.startPrank(USER_1);
         vm.expectRevert(YoyoNft.YoyoNft__AllNFTsHaveBeenMinted.selector);
-        yoyoNft.requestNFT{value: mintPayment}(true);
+        yoyoNft.requestNFT{value: mintPayment}();
         vm.stopPrank();
     } 
 
@@ -116,9 +116,9 @@ contract YoyoNftTest is Test {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
         uint256 contractInitialBalance = address(yoyoNft).balance;
         vm.startPrank(USER_1);
-        // vm.expectEmit(true, true, true, true);
-        // emit YoyoNft.NftRequested(0, USER_1);
-        yoyoNft.requestNFT{value: mintPayment}(true);
+        vm.expectEmit(true, true, true, true);
+        emit YoyoNft.NftRequested(0, USER_1);
+        yoyoNft.requestNFT{value: mintPayment}();
         vm.stopPrank();
         assertEq(address(yoyoNft).balance, contractInitialBalance + mintPayment);
         //assertEq(yoyoNft.getSenderFromRequestId(0), USER_1);
@@ -128,18 +128,9 @@ contract YoyoNftTest is Test {
         uint256 mintPayment = yoyoNft.getMintPriceEth()/2;
         vm.startPrank(USER_1);
         vm.expectRevert(YoyoNft.YoyoNft__NotEnoughPayment.selector);
-        yoyoNft.requestNFT{value:mintPayment}(true);
+        yoyoNft.requestNFT{value:mintPayment}();
         vm.stopPrank();
     }
-
-    function testIfEnableNativePaymentWorks() public {
-        uint256 mintPayment = yoyoNft.getMintPriceEth();
-        vm.startPrank(USER_1);
-        vm.expectRevert();
-        yoyoNft.requestNFT{value: mintPayment}(false);
-        vm.stopPrank();
-    }
-
 
 
 // Test deposit and withdraw function
