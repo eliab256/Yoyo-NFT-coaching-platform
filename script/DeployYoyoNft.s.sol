@@ -9,39 +9,52 @@ import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.
 contract DeployYoyoNft is Script {
     //function setUp() public {}
 
-    function run() public {   
+    function run() public {
         deployContract();
     }
 
-    function deployContract() public returns(YoyoNft, HelperConfig) {
+    function deployContract() public returns (YoyoNft, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        if(config.subscriptionId == 0) {
+        if (config.subscriptionId == 0) {
             // Create a subscription
             CreateSubscription createSubscription = new CreateSubscription();
-            (config.subscriptionId, config.vrfCoordinator) = createSubscription.createSubscription(config.vrfCoordinator);
+            (
+                config.subscriptionId,
+                config.vrfCoordinatorV2_5
+            ) = createSubscription.createSubscription(
+                config.vrfCoordinatorV2_5
+            );
 
             // Fund the subscription
             FundSubscription fundSubscription = new FundSubscription();
-            fundSubscription.fundSubscription(config.vrfCoordinator, config.subscriptionId, config.link);
-
+            fundSubscription.fundSubscription(
+                config.vrfCoordinatorV2_5,
+                config.subscriptionId,
+                config.link
+            );
         }
 
         vm.startBroadcast();
         YoyoNft yoyoNft = new YoyoNft(
-            config.vrfCoordinator,
+            config.vrfCoordinatorV2_5,
             config.keyHash,
             config.subscriptionId,
             config.callbackGasLimit,
             config.baseURI
         );
         console.log("YoyoNft deployed to: ", address(yoyoNft));
+        console.log("config.vrfCoordinator: ", config.vrfCoordinatorV2_5);
         vm.stopBroadcast();
 
         // Add the consumer don't need broadcast cause it's already in the contract
         AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(address(yoyoNft), config.vrfCoordinator, config.subscriptionId);
+        addConsumer.addConsumer(
+            address(yoyoNft),
+            config.vrfCoordinatorV2_5,
+            config.subscriptionId
+        );
 
         return (yoyoNft, helperConfig);
     }
