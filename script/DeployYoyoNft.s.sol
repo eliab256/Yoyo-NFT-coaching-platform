@@ -9,11 +9,7 @@ import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.
 contract DeployYoyoNft is Script {
     //function setUp() public {}
 
-    function run() public {
-        deployContract();
-    }
-
-    function deployContract() public returns (YoyoNft, HelperConfig) {
+    function run() public returns (YoyoNft, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
@@ -44,8 +40,11 @@ contract DeployYoyoNft is Script {
             config.callbackGasLimit,
             config.baseURI
         );
-        console.log("YoyoNft deployed to: ", address(yoyoNft));
-        console.log("config.vrfCoordinator: ", config.vrfCoordinatorV2_5);
+        console.log("(deploy script) YoyoNft deployed to: ", address(yoyoNft));
+        console.log(
+            "(deploy script) config.vrfCoordinator: ",
+            config.vrfCoordinatorV2_5
+        );
         vm.stopBroadcast();
 
         // Add the consumer don't need broadcast cause it's already in the contract

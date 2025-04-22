@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFCoordinatorV2_5MockWrapper} from "../test/mocks/VRFCoordinatorV2_5MockWrapper.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
 
 abstract contract CodeConstants {
@@ -86,22 +86,24 @@ contract HelperConfig is Script, CodeConstants {
 
         //VRF Mock deployment
         vm.startBroadcast();
-        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
+        VRFCoordinatorV2_5MockWrapper vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5MockWrapper(
                 MOCK_BASE_FEE,
                 MOCK_GAS_PRICE_LINK,
                 MOCK_WEI_PER_UNIT_LINK
             );
         //Link Token deployment
         LinkToken linkToken = new LinkToken();
+
+        //Fund the subscription
         uint256 mockSubscriptionId = vrfCoordinatorV2_5Mock
             .createSubscription();
         vm.stopBroadcast();
         console.log(
-            "Mock VrfCoordinator deployed to: ",
+            "(helper config) Mock VrfCoordinator deployed to: ",
             address(vrfCoordinatorV2_5Mock)
         );
 
-        NetworkConfig memory anvilConfig = NetworkConfig({
+        activeNetworkConfig = NetworkConfig({
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId: mockSubscriptionId,
@@ -109,6 +111,6 @@ contract HelperConfig is Script, CodeConstants {
             baseURI: vm.envString("BASE_URI"),
             link: address(linkToken)
         });
-        return anvilConfig;
+        return activeNetworkConfig;
     }
 }

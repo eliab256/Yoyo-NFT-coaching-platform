@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig, CodeConstants} from "script/helperConfig.s.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFCoordinatorV2_5MockWrapper} from "../test/mocks/VRFCoordinatorV2_5MockWrapper.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
@@ -21,8 +21,9 @@ contract CreateSubscription is Script {
         console.log("Creating subscription on chain id", block.chainid);
         vm.startBroadcast();
         // Create a subscription
-        uint256 subscriptionId = VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5)
-            .createSubscription();
+        uint256 subscriptionId = VRFCoordinatorV2_5MockWrapper(
+            vrfCoordinatorV2_5
+        ).createSubscription();
         vm.stopBroadcast();
         console.log("Your subscription ID: ", subscriptionId);
         return (subscriptionId, vrfCoordinatorV2_5);
@@ -49,16 +50,22 @@ contract FundSubscription is Script, CodeConstants {
         uint256 subscriptionId,
         address linkToken
     ) public {
-        console.log("Funding subscription: ", subscriptionId);
-        console.log("Funding subscription on chain id", block.chainid);
         console.log(
-            "Funding subscription with vrfCoordinator",
+            "(interactions script)interactions script)Funding subscription: ",
+            subscriptionId
+        );
+        console.log(
+            "(interactions script)Funding subscription on chain id",
+            block.chainid
+        );
+        console.log(
+            "(interactions script)Funding subscription with vrfCoordinator ",
             vrfCoordinatorV2_5
         );
 
         if (block.chainid == ANVIL_CHAIN_ID) {
             vm.startBroadcast();
-            VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fundSubscription(
+            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fundSubscription(
                 subscriptionId,
                 FUND_AMOUNT
             );
@@ -92,12 +99,15 @@ contract AddConsumer is Script {
         address vrfCoordinatorV2_5,
         uint256 subscriptionId
     ) public {
-        console.log("Adding consumer contract:", consumer);
-        console.log("To vrfCoordinator:", vrfCoordinatorV2_5);
-        console.log("on chain id:", block.chainid);
+        console.log("(interactions script)Adding consumer contract:", consumer);
+        console.log(
+            "(interactions script)To vrfCoordinator:",
+            vrfCoordinatorV2_5
+        );
+        console.log("(interactions script)on chain id:", block.chainid);
 
         vm.startBroadcast();
-        VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).addConsumer(
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).addConsumer(
             subscriptionId,
             consumer
         );

@@ -6,7 +6,7 @@ import {YoyoNft} from "../src/YoyoNFT.sol";
 import {DeployYoyoNft} from "../script/DeployYoyoNft.s.sol";
 import {HelperConfig} from "../script/helperConfig.s.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFCoordinatorV2_5MockWrapper} from "../test/mocks/VRFCoordinatorV2_5MockWrapper.sol";
 
 contract YoyoNftTest is Test {
     YoyoNft public yoyoNft;
@@ -33,7 +33,7 @@ contract YoyoNftTest is Test {
 
     function setUp() external {
         DeployYoyoNft contractDeployer = new DeployYoyoNft();
-        (yoyoNft, helperConfig) = contractDeployer.deployContract();
+        (yoyoNft, helperConfig) = contractDeployer.run();
 
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
@@ -58,16 +58,7 @@ contract YoyoNftTest is Test {
     }
 
     function testVrfCoordinator() public view {
-        //assertEq(address(yoyoNft.i_vrfCoordinator()), vrfCoordinatorV2_5);
-        console.log("vrfCoordinator", vrfCoordinatorV2_5);
-        console.log(
-            "yoyoNft.i_vrfCoordinator",
-            address(yoyoNft.i_vrfCoordinator())
-        );
-        console.log(
-            "yoyoNft.s_vrfCoordinator",
-            address(yoyoNft.s_vrfCoordinator())
-        );
+        assertEq(address(yoyoNft.i_vrfCoordinator()), vrfCoordinatorV2_5);
     }
 
     function testConstructorParametersAssignments() public view {
@@ -143,17 +134,17 @@ contract YoyoNftTest is Test {
         vm.warp(block.timestamp + 30);
         vm.roll(block.number + 1);
         vm.stopPrank();
+        assertEq(yoyoNft.getSenderFromRequestId(1), USER_1);
 
-        VRFCoordinatorV2_5Mock.Request memory request = yoyoNft
-            .i_vrfCoordinator
-            .s_requests(1);
+        VRFCoordinatorV2_5MockWrapper.RequestPublic
+            memory request = VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+                .getRequest(1);
         assertEq(request.subId, subscriptionId);
         assertEq(request.callbackGasLimit, callbackGasLimit);
-        assertEq(request.numWords, yoyoNft.NUM_WORDS());
-        // assertEq(
-        //     request.extraArgs,
-        //     abi.encode(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
-        // );
+        assertEq(
+            request.numWords,
+            1
+        ); /* 1 rapresent the private variable NUM_WORDS*/
     }
 
     function testIfRequestIdToSenderMappingWorksWithRequestNFT() public {
@@ -176,26 +167,29 @@ contract YoyoNftTest is Test {
         vm.stopPrank();
     }
 
-    // function testIfFullfillRandomWordsRevertsIfRequestIdIsInvalid() public {
-    //     uint256 invalidRequestId = 9999;
-    //     vm.startPrank(address(vrfCoordinatorV2_5));
-    //     vm.expectRevert(YoyoNft.YoyoNft__InvalidRequest.selector);
-    //     yoyoNft.fulfillRandomWords(invalidRequestId, new uint256[](0));
-    //     vm.stopPrank();
-    // }
+    function testIfFulfillRandomWordsRevertsIfRequestIdIsInvalid() public {
+        uint256 invalidRequestId = 9999;
+        vm.startPrank(address(yoyoNft));
+        vm.expectRevert();
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fulfillRandomWords(
+            invalidRequestId,
+            address(yoyoNft)
+        );
+        vm.stopPrank();
+    }
 
-    // function testIfFullfillRandomWordsWorksAndMintsNFT() public {
-    //     uint256 mintPayment = yoyoNft.getMintPriceEth();
-    //     vm.startPrank(USER_1);
-    //     yoyoNft.requestNFT{value: mintPayment}();
-    //     vm.stopPrank();
-    //     vm.startPrank(USER_2);
-    //     yoyoNft.requestNFT{value: mintPayment}();
-    //     vm.stopPrank();
-    //     vm.roll(block.number + 2);
-    //     //assertEq(yoyoNft.getTotalMinted(), 2);
-
-    // }
+    function testIfFullfillRandomWordsWorksAndMintsNFT() public {
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        vm.startPrank(USER_1);
+        yoyoNft.requestNFT{value: mintPayment}();
+        vm.stopPrank();
+        vm.startPrank(USER_2);
+        yoyoNft.requestNFT{value: mintPayment}();
+        vm.stopPrank();
+        vm.roll(block.number + 2);
+        vm.warp(block.timestamp + 30);
+        assertEq(yoyoNft.getTotalMinted(), 2);
+    }
 
     // Test deposit and withdraw function
 
@@ -283,13 +277,13 @@ contract YoyoNftTest is Test {
     function testBaseURIGetter() public view {
         assertEq(yoyoNft.getBaseURI(), baseURI);
     }
-}
 
-// function testConsoleLogStorageSlots() public {
-//     for (uint256 i = 0; i < 20; i++) {
-//         bytes32 slot = bytes32(i);
-//         bytes32 value = vm.load(address(yoyoNft), slot);
-//         uint256 intValue = uint256(value);
-//         console.log("Slot", i, ":", intValue);
-//     }
-// }
+    // function testConsoleLogStorageSlots() public {
+    //     for (uint256 i = 0; i < 20; i++) {
+    //         bytes32 slot = bytes32(i);
+    //         bytes32 value = vm.load(address(yoyoNft), slot);
+    //         uint256 intValue = uint256(value);
+    //         console.log("Slot", i, ":", intValue);
+    //     }
+    // }
+}
