@@ -6,6 +6,7 @@ import {YoyoNft} from "../src/YoyoNFT.sol";
 import {DeployYoyoNft} from "../script/DeployYoyoNft.s.sol";
 import {HelperConfig} from "../script/helperConfig.s.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract YoyoNftTest is Test {
     YoyoNft public yoyoNft;
@@ -135,23 +136,25 @@ contract YoyoNftTest is Test {
         );
     }
 
-    // function testIfRequestPassAllCorrectParameters() public {
-    //     uint256 mintPayment = yoyoNft.getMintPriceEth();
-    //     vm.startPrank(USER_1);
-    //     yoyoNft.requestNFT{value: mintPayment}();
-    //     vm.warp(block.timestamp + 30);
-    //     vm.roll(block.number + 1);
-    //     vm.stopPrank();
+    function testIfRequestPassAllCorrectParameters() public {
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        vm.startPrank(USER_1);
+        yoyoNft.requestNFT{value: mintPayment}();
+        vm.warp(block.timestamp + 30);
+        vm.roll(block.number + 1);
+        vm.stopPrank();
 
-    //     request = s_vrfCoordinator.s_requests(1);
-    //     assertEq(request.subId, subscriptionId);
-    //     assertEq(request.callbackGasLimit, callbackGasLimit);
-    //     assertEq(request.numWords, yoyoNft.NUM_WORDS());
-    //     assertEq(
-    //         request.extraArgs,
-    //         abi.encode(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
-    //     );
-    // }
+        VRFCoordinatorV2_5Mock.Request memory request = yoyoNft
+            .i_vrfCoordinator
+            .s_requests(1);
+        assertEq(request.subId, subscriptionId);
+        assertEq(request.callbackGasLimit, callbackGasLimit);
+        assertEq(request.numWords, yoyoNft.NUM_WORDS());
+        // assertEq(
+        //     request.extraArgs,
+        //     abi.encode(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
+        // );
+    }
 
     function testIfRequestIdToSenderMappingWorksWithRequestNFT() public {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
