@@ -19,6 +19,7 @@ abstract contract CodeConstants {
 contract HelperConfig is Script, CodeConstants {
     error HelperConfig__InvalidChainId();
 
+    //Network Config Struct give different parameters to the contract due to different networks
     struct NetworkConfig {
         address vrfCoordinatorV2_5;
         bytes32 keyHash;
@@ -52,6 +53,7 @@ contract HelperConfig is Script, CodeConstants {
         }
     }
 
+    //Start deploying the contracts on run function of deploy Script based on the chainId (DeployYoyoNft.s.sol, line 16)
     function getConfig() public returns (NetworkConfig memory) {
         return getConfigsByChainId(block.chainid);
     }
@@ -86,12 +88,13 @@ contract HelperConfig is Script, CodeConstants {
 
         //VRF Mock deployment
         vm.startBroadcast();
+        //ChainlinkVRF Mock deployment
         VRFCoordinatorV2_5MockWrapper vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5MockWrapper(
                 MOCK_BASE_FEE,
                 MOCK_GAS_PRICE_LINK,
                 MOCK_WEI_PER_UNIT_LINK
             );
-        //Link Token deployment
+        //Link Token Mock deployment
         LinkToken linkToken = new LinkToken();
 
         //Fund the subscription
@@ -111,6 +114,7 @@ contract HelperConfig is Script, CodeConstants {
             baseURI: vm.envString("BASE_URI"),
             link: address(linkToken)
         });
+
         return activeNetworkConfig;
     }
 }

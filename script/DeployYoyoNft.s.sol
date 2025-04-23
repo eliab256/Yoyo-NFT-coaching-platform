@@ -11,6 +11,8 @@ contract DeployYoyoNft is Script {
 
     function run() public returns (YoyoNft, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
+        //if local, deploy the mocks and get the config
+        //if sepolia, get sepolia config
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
         if (config.subscriptionId == 0) {
@@ -33,6 +35,7 @@ contract DeployYoyoNft is Script {
         }
 
         vm.startBroadcast();
+        // Deploy the YoyoNft contract and assign parameters from the config
         YoyoNft yoyoNft = new YoyoNft(
             config.vrfCoordinatorV2_5,
             config.keyHash,
@@ -41,10 +44,6 @@ contract DeployYoyoNft is Script {
             config.baseURI
         );
         console.log("(deploy script) YoyoNft deployed to: ", address(yoyoNft));
-        console.log(
-            "(deploy script) config.vrfCoordinator: ",
-            config.vrfCoordinatorV2_5
-        );
         vm.stopBroadcast();
 
         // Add the consumer don't need broadcast cause it's already in the contract

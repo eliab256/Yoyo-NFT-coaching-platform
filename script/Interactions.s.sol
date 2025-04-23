@@ -34,58 +34,6 @@ contract CreateSubscription is Script {
     }
 }
 
-contract FundSubscription is Script, CodeConstants {
-    uint256 public constant FUND_AMOUNT = 3 ether; // 3LINK
-
-    function fundSubscriptionUsingConfig() public {
-        HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinator = helperConfig.getConfig().vrfCoordinatorV2_5;
-        uint256 subscriptionId = helperConfig.getConfig().subscriptionId;
-        address linkToken = helperConfig.getConfig().link;
-        fundSubscription(vrfCoordinator, subscriptionId, linkToken);
-    }
-
-    function fundSubscription(
-        address vrfCoordinatorV2_5,
-        uint256 subscriptionId,
-        address linkToken
-    ) public {
-        console.log(
-            "(interactions script)interactions script)Funding subscription: ",
-            subscriptionId
-        );
-        console.log(
-            "(interactions script)Funding subscription on chain id",
-            block.chainid
-        );
-        console.log(
-            "(interactions script)Funding subscription with vrfCoordinator ",
-            vrfCoordinatorV2_5
-        );
-
-        if (block.chainid == ANVIL_CHAIN_ID) {
-            vm.startBroadcast();
-            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fundSubscription(
-                subscriptionId,
-                FUND_AMOUNT
-            );
-            vm.stopBroadcast();
-        } else {
-            vm.startBroadcast();
-            LinkToken(linkToken).transferAndCall(
-                vrfCoordinatorV2_5,
-                FUND_AMOUNT,
-                abi.encode(subscriptionId)
-            );
-            vm.stopBroadcast();
-        }
-    }
-
-    function run() public {
-        fundSubscriptionUsingConfig();
-    }
-}
-
 contract AddConsumer is Script {
     function addConsumerUsingConfig(address mostRecentlyDeployed) public {
         HelperConfig helperConfig = new HelperConfig();
@@ -120,5 +68,71 @@ contract AddConsumer is Script {
             block.chainid
         );
         addConsumerUsingConfig(mostRecentDeployed);
+    }
+}
+
+contract FundSubscription is Script, CodeConstants {
+    uint96 public constant FUND_AMOUNT = 3 ether; // 3LINK
+
+    function fundSubscriptionUsingConfig() public {
+        HelperConfig helperConfig = new HelperConfig();
+        address vrfCoordinator = helperConfig.getConfig().vrfCoordinatorV2_5;
+        uint256 subscriptionId = helperConfig.getConfig().subscriptionId;
+        address linkToken = helperConfig.getConfig().link;
+
+        // if(subscriptionId == 0) {
+        //    CreateSubscription createSub = new CreateSubscription();
+        //    (uint256 updateSubscriptionId, address updateVRFv2) = createSub.run();
+        //    subscriptionId = updateSubscriptionId;
+        //    vrfCoordinator = updateVRFv2;
+        // }
+
+        fundSubscription(vrfCoordinator, subscriptionId, linkToken);
+    }
+
+    function fundSubscription(
+        address vrfCoordinatorV2_5,
+        uint256 subscriptionId,
+        address linkToken
+    ) public {
+        console.log(
+            "(interactions script) Funding subscription: ",
+            subscriptionId
+        );
+        console.log(
+            "(interactions script)Funding subscription on chain id",
+            block.chainid
+        );
+        console.log(
+            "(interactions script)Funding subscription with vrfCoordinator ",
+            vrfCoordinatorV2_5
+        );
+
+        if (block.chainid == ANVIL_CHAIN_ID) {
+            vm.startBroadcast();
+            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fundSubscription(
+                subscriptionId,
+                FUND_AMOUNT
+            );
+            vm.stopBroadcast();
+        } else {
+            vm.startBroadcast();
+            LinkToken(linkToken).transferAndCall(
+                vrfCoordinatorV2_5,
+                FUND_AMOUNT,
+                abi.encode(subscriptionId)
+            );
+            vm.stopBroadcast();
+        }
+        console.log(
+            "(interactions script)Subscription funded with",
+            FUND_AMOUNT,
+            "LINK at:",
+            msg.sender
+        );
+    }
+
+    function run() public {
+        fundSubscriptionUsingConfig();
     }
 }

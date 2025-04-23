@@ -12,7 +12,7 @@ contract YoyoNftTest is Test {
     YoyoNft public yoyoNft;
     HelperConfig public helperConfig;
 
-    // NetworkConfig struct
+    // NetworkConfig struct for constructor parameters
     address vrfCoordinatorV2_5;
     bytes32 keyHash;
     uint256 subscriptionId;
@@ -49,6 +49,7 @@ contract YoyoNftTest is Test {
         vm.deal(USER_1, STARING_BALANCE_PLAYER_1);
         vm.deal(USER_2, STARING_BALANCE_PLAYER_2);
         vm.deal(USER_NO_BALANCE, STARING_BALANCE_PLAYER_NO_BALANCE);
+        vm.deal(address(vrfCoordinatorV2_5), 10 ether);
     }
 
     // Test the constructor parameters assignments
@@ -116,11 +117,19 @@ contract YoyoNftTest is Test {
     function testIfRequestNFTWorksAndEmitsEvent() public {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
         uint256 contractInitialBalance = address(yoyoNft).balance;
+
         vm.startPrank(USER_1);
         vm.expectEmit(true, true, true, true);
-        emit YoyoNft.NftRequested(1, USER_1);
+        emit YoyoNft.YoyoNft__NftRequested(1, USER_1);
         yoyoNft.requestNFT{value: mintPayment}();
         vm.stopPrank();
+        console.log("Subscription ID:", subscriptionId);
+        console.log(
+            "Subscription Balance:",
+            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+                .getSubscriptionBalance(subscriptionId)
+        );
+
         assertEq(
             address(yoyoNft).balance,
             contractInitialBalance + mintPayment
@@ -180,15 +189,19 @@ contract YoyoNftTest is Test {
 
     function testIfFullfillRandomWordsWorksAndMintsNFT() public {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
+
         vm.startPrank(USER_1);
         yoyoNft.requestNFT{value: mintPayment}();
         vm.stopPrank();
-        vm.startPrank(USER_2);
-        yoyoNft.requestNFT{value: mintPayment}();
-        vm.stopPrank();
-        vm.roll(block.number + 2);
         vm.warp(block.timestamp + 30);
-        assertEq(yoyoNft.getTotalMinted(), 2);
+        vm.roll(block.number + 1);
+
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fulfillRandomWords(
+            1,
+            address(yoyoNft)
+        );
+
+        assertEq(yoyoNft.getTotalMinted(), 1);
     }
 
     // Test deposit and withdraw function
@@ -247,7 +260,6 @@ contract YoyoNftTest is Test {
     }
 
     // Test Getters
-
     function testTokenURIGetterRevertDueToInvalidTokenId() public {
         uint256 invalidTokenId = yoyoNft.MAX_NFT_SUPPLY() + 1;
         vm.prank(USER_1);

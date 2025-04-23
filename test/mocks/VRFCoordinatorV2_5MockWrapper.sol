@@ -28,4 +28,11 @@ contract VRFCoordinatorV2_5MockWrapper is VRFCoordinatorV2_5Mock {
                 request.extraArgs
             );
     }
+
+    function getSubscriptionBalance(
+        uint256 _subId
+    ) public view returns (uint256) {
+        (uint96 balance, , , , ) = getSubscription(_subId);
+        return uint256(balance);
+    }
 }

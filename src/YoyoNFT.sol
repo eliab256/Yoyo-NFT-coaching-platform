@@ -53,8 +53,11 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     mapping(uint256 => bool) private s_tokensMinted;
 
     /* Events */
-    event NftRequested(uint256 indexed requestId, address indexed sender);
-    event Nftminted(uint256 indexed tokenId, address minter);
+    event YoyoNft__NftRequested(
+        uint256 indexed requestId,
+        address indexed sender
+    );
+    event YoyoNft__Nftminted(uint256 indexed tokenId, address minter);
     event YoyoNft__WithdrawCompleted(uint256 amount, uint256 timestamp);
     event YoyoNft__WithdrawIsFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__DepositCompleted(uint256 amount, uint256 timestamp);
@@ -112,15 +115,13 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
                 callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({
-                        nativePayment: true
-                    })
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: true})
                 )
             })
         );
 
         s_requestIdToSender[requestId] = msg.sender;
-        emit NftRequested(requestId, msg.sender);
+        emit YoyoNft__NftRequested(requestId, msg.sender);
     }
 
     function changeMintPrice(uint256 newPrice) public yoyoOnlyOwner {
@@ -145,15 +146,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 contractBalance = address(this).balance;
         bool success = payable(i_owner).send(contractBalance);
         if (success) {
-            emit YoyoNft__WithdrawCompleted(
-                contractBalance,
-                block.timestamp
-            );
+            emit YoyoNft__WithdrawCompleted(contractBalance, block.timestamp);
         } else {
-            emit YoyoNft__WithdrawIsFailed(
-                contractBalance,
-                block.timestamp
-            );
+            emit YoyoNft__WithdrawIsFailed(contractBalance, block.timestamp);
             revert YoyoNft__WithdrawFailed();
         }
     }
@@ -186,7 +181,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         );
         s_tokenIdToUri[tokenId] = tokenUri;
         emit YoyoNft__TokenIdAssigned(tokenId, tokenUri);
-        emit Nftminted(tokenId, nftOwner);
+        emit YoyoNft__Nftminted(tokenId, nftOwner);
     }
 
     function findAvailableTokenId(
@@ -266,5 +261,11 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 requestId
     ) public view returns (address) {
         return s_requestIdToSender[requestId];
+    }
+
+    function getOwnerFromTokenId(
+        uint256 tokenId
+    ) public view returns (address) {
+        return _ownerOf(tokenId);
     }
 }
