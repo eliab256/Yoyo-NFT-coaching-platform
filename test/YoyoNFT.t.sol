@@ -2,13 +2,15 @@
 pragma solidity ^0.8.0;
 
 import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Test.sol";
 import {YoyoNft} from "../src/YoyoNFT.sol";
 import {DeployYoyoNft} from "../script/DeployYoyoNft.s.sol";
 import {HelperConfig} from "../script/helperConfig.s.sol";
+import {CodeConstants} from "../script/helperConfig.s.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
 import {VRFCoordinatorV2_5MockWrapper} from "../test/mocks/VRFCoordinatorV2_5MockWrapper.sol";
 
-contract YoyoNftTest is Test {
+contract YoyoNftTest is Test, CodeConstants {
     YoyoNft public yoyoNft;
     HelperConfig public helperConfig;
 
@@ -30,6 +32,7 @@ contract YoyoNftTest is Test {
     uint256 public constant STARING_BALANCE_PLAYER_1 = 10 ether;
     uint256 public constant STARING_BALANCE_PLAYER_2 = 10 ether;
     uint256 public constant STARING_BALANCE_PLAYER_NO_BALANCE = 0 ether;
+    uint256 public constant STRING_LINK_BALANCE = 100;
 
     function setUp() external {
         DeployYoyoNft contractDeployer = new DeployYoyoNft();
@@ -50,6 +53,17 @@ contract YoyoNftTest is Test {
         vm.deal(USER_2, STARING_BALANCE_PLAYER_2);
         vm.deal(USER_NO_BALANCE, STARING_BALANCE_PLAYER_NO_BALANCE);
         vm.deal(address(vrfCoordinatorV2_5), 10 ether);
+
+        vm.startPrank(deployer);
+        if (block.chainid == ANVIL_CHAIN_ID) {
+            link.mint(deployer, STRING_LINK_BALANCE);
+            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fundSubscription(
+                subscriptionId,
+                STRING_LINK_BALANCE
+            );
+        }
+        link.approve(vrfCoordinatorV2_5, STRING_LINK_BALANCE);
+        vm.stopPrank;
     }
 
     // Test the constructor parameters assignments

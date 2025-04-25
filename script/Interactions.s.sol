@@ -29,7 +29,7 @@ contract CreateSubscription is Script {
         return (subscriptionId, vrfCoordinatorV2_5);
     }
 
-    function run() public {
+    function run() external returns (uint256, address) {
         createSubscriptionUsingConfig();
     }
 }
@@ -72,7 +72,7 @@ contract AddConsumer is Script {
 }
 
 contract FundSubscription is Script, CodeConstants {
-    uint96 public constant FUND_AMOUNT = 3 ether; // 3LINK
+    uint96 public constant FUND_AMOUNT = 10 ether; // 10 LINK
 
     function fundSubscriptionUsingConfig() public {
         HelperConfig helperConfig = new HelperConfig();
@@ -80,12 +80,13 @@ contract FundSubscription is Script, CodeConstants {
         uint256 subscriptionId = helperConfig.getConfig().subscriptionId;
         address linkToken = helperConfig.getConfig().link;
 
-        // if(subscriptionId == 0) {
-        //    CreateSubscription createSub = new CreateSubscription();
-        //    (uint256 updateSubscriptionId, address updateVRFv2) = createSub.run();
-        //    subscriptionId = updateSubscriptionId;
-        //    vrfCoordinator = updateVRFv2;
-        // }
+        if (subscriptionId == 0) {
+            CreateSubscription createSub = new CreateSubscription();
+            (uint256 updateSubscriptionId, address updateVRFv2) = createSub
+                .run();
+            subscriptionId = updateSubscriptionId;
+            vrfCoordinator = updateVRFv2;
+        }
 
         fundSubscription(vrfCoordinator, subscriptionId, linkToken);
     }
@@ -112,7 +113,7 @@ contract FundSubscription is Script, CodeConstants {
             vm.startBroadcast();
             VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fundSubscription(
                 subscriptionId,
-                FUND_AMOUNT
+                FUND_AMOUNT * 100
             );
             vm.stopBroadcast();
         } else {
