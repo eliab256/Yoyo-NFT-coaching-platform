@@ -110,7 +110,7 @@ contract HelperConfig is Script, CodeConstants {
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
             keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId: mockSubscriptionId,
-            callbackGasLimit: 500000,
+            callbackGasLimit: 5000000,
             baseURI: vm.envString("BASE_URI"),
             link: address(linkToken)
         });

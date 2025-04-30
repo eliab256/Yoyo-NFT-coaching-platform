@@ -17,7 +17,7 @@ contract LinkToken is ERC20 {
     uint8 constant DECIMALS = 18;
 
     constructor() ERC20("LinkToken", "LINK", DECIMALS) {
-        _mint(msg.sender, INITIAL_SUPPLY);
+        _mint(address(this), INITIAL_SUPPLY);
     }
 
     function mint(address to, uint256 value) public {

@@ -103,7 +103,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         revert YoyoNft__CallValidFunctionToInteractWithContract();
     }
 
-    function requestNFT() public payable notExceedNFTsMaxSupply {
+    function requestNFT(
+        bool _nativePayment
+    ) public payable notExceedNFTsMaxSupply {
         if (msg.value < s_mintPriceEth) {
             revert YoyoNft__NotEnoughPayment();
         }
@@ -115,7 +117,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
                 callbackGasLimit: i_callbackGasLimit,
                 numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: true})
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: _nativePayment})
                 )
             })
         );
@@ -267,5 +269,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 tokenId
     ) public view returns (address) {
         return _ownerOf(tokenId);
+    }
+
+    function getAccountBalance(address account) public view returns (uint256) {
+        return balanceOf(account);
     }
 }
