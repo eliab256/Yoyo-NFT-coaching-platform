@@ -29,7 +29,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     error YoyoNft__WithdrawFailed();
     error YoyoNft__ThisContractDoesntAcceptDeposit();
     error YoyoNft__CallValidFunctionToInteractWithContract();
-    error YoYoNft__YouAreNotANftOwner();
+    error YoYoNft__YouAreNotAnNftOwner();
     error YoyoNft__ContractBalanceIsZero();
 
     /* Type declarations */
@@ -215,9 +215,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         return s_tokenIdToUri[tokenId];
     }
 
-    function getMyNFT() public view returns (string[] memory) {
+    function getMyNFT() public view returns (uint256[] memory) {
         uint256 count = 0;
-        string[] memory uris = new string[](s_tokenCounter);
+        uint256[] memory temporaryTokenIds = new uint256[](s_tokenCounter);
 
         for (
             uint256 tokenId = MIN_TOKEN_ID;
@@ -227,7 +227,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
             if (s_tokensMinted[tokenId]) {
                 try this.ownerOf(tokenId) returns (address owner) {
                     if (owner == msg.sender) {
-                        uris[count] = tokenURI(tokenId);
+                        temporaryTokenIds[count] = tokenId;
                         count++;
                     }
                 } catch {
@@ -237,14 +237,14 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         }
 
         if (count == 0) {
-            revert YoYoNft__YouAreNotANftOwner();
+            revert YoYoNft__YouAreNotAnNftOwner();
         }
 
-        string[] memory finalUris = new string[](count);
+        uint256[] memory finalTokenIds = new uint256[](count);
         for (uint256 i = 0; i < count; i++) {
-            finalUris[i] = uris[i];
+            finalTokenIds[i] = temporaryTokenIds[i];
         }
-        return finalUris;
+        return finalTokenIds;
     }
 
     function getTotalMinted() public view returns (uint256) {
@@ -273,9 +273,5 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
 
     function getAccountBalance(address account) public view returns (uint256) {
         return balanceOf(account);
-    }
-
-    function getMyNFTs() public view returns (string[] memory) {
-        return findMyNFT();
     }
 }

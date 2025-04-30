@@ -9,6 +9,7 @@ import {HelperConfig} from "../script/helperConfig.s.sol";
 import {CodeConstants} from "../script/helperConfig.s.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
 import {VRFCoordinatorV2_5MockWrapper} from "../test/mocks/VRFCoordinatorV2_5MockWrapper.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract YoyoNftTest is Test, CodeConstants {
     YoyoNft public yoyoNft;
@@ -286,16 +287,55 @@ contract YoyoNftTest is Test, CodeConstants {
         public
         multipleRequestNft(false, USER_1, address(0), address(0))
     {
-        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fulfillRandomWords(
-            1,
-            address(yoyoNft)
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 777;
+        uint256 tokenId = (randomWords[0] % yoyoNft.MAX_NFT_SUPPLY()) + 1;
+
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
+
+        //recreate tokenURI
+        string memory tokenUriTest = string(
+            abi.encodePacked(baseURI, "/", Strings.toString(tokenId), ".json")
         );
+
+        assertEq(yoyoNft.tokenURI(tokenId), tokenUriTest);
+
+        // vm.expectEmit(false, false, false, true);
+        // emit YoyoNft.YoyoNft__TokenIdAssigned(tokenId, tokenUriTest);
+        // vm.expectEmit(true, false, false, true);
+        // emit YoyoNft.YoyoNft__NftMinted(tokenId, USER_1);
 
         assertEq(yoyoNft.getTotalMinted(), 1);
         assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
 
-    //function testTokenIdIsValidAndEmitted() public {}
+    /*//////////////////////////////////////////////////////////////
+                Test deposit and withdraw functions  
+//////////////////////////////////////////////////////////////*/
+
+    function testTransferNftWorks() public {
+        uint256 mintPayment = yoyoNft.getMintPriceEth();
+        bool nativePayment = false;
+        vm.startPrank(USER_1);
+        yoyoNft.requestNFT{value: mintPayment}(nativePayment);
+        vm.warp(block.timestamp + 30);
+        vm.roll(block.number + 1);
+
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 777;
+        uint256 tokenId = (randomWords[0] % yoyoNft.MAX_NFT_SUPPLY()) + 1;
+
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
+
+        yoyoNft.transferNFT(USER_2, tokenId, abi.encodePacked("metadata"));
+        vm.stopPrank();
+
+        assertEq(yoyoNft.getAccountBalance(USER_1), 0);
+        assertEq(yoyoNft.getAccountBalance(USER_2), 1);
+        assertEq(yoyoNft.getOwnerFromTokenId(tokenId), USER_2);
+    }
 
     /*//////////////////////////////////////////////////////////////
                 Test deposit and withdraw functions  
@@ -409,7 +449,43 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
 
-    function testFindMyNftsGetter() public {}
+    function testFindMyNftsGetterRevertDueToNotOwner() public {
+        vm.prank(USER_2);
+        vm.expectRevert(YoyoNft.YoYoNft__YouAreNotAnNftOwner.selector);
+        yoyoNft.getMyNFT();
+    }
+
+    function testFindMyNftsGetter()
+        public
+        multipleRequestNft(false, USER_1, address(0), address(0))
+    {
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fulfillRandomWords(
+            1,
+            address(yoyoNft)
+        );
+
+        vm.prank(USER_1);
+        uint256[] memory myNfts = yoyoNft.getMyNFT();
+        //assertEq(myNfts[1], 1);
+        assertEq(myNfts.length, 1);
+    }
+
+    function testGetOwnerFromTokenId() public {
+        vm.startPrank(USER_1);
+        yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
+        vm.warp(block.timestamp + 30);
+        vm.roll(block.number + 1);
+
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 777;
+        uint256 tokenId = (randomWords[0] % yoyoNft.MAX_NFT_SUPPLY()) + 1;
+
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
+
+        vm.stopPrank();
+        assertEq(yoyoNft.getOwnerFromTokenId(tokenId), USER_1);
+    }
 
     // function testConsoleLogStorageSlots() public {
     //     for (uint256 i = 0; i < 20; i++) {
