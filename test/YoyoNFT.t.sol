@@ -295,6 +295,8 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
 
+    //function testTokenIdIsValidAndEmitted() public {}
+
     /*//////////////////////////////////////////////////////////////
                 Test deposit and withdraw functions  
 //////////////////////////////////////////////////////////////*/
@@ -392,9 +394,22 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getBaseURI(), baseURI);
     }
 
-    function testAccountBalanceGetter() public view {
+    function testAccountBalanceGetter() public {
         assertEq(yoyoNft.getAccountBalance(USER_1), 0);
+
+        vm.startPrank(USER_1);
+        yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
+        vm.warp(block.timestamp + 30);
+        vm.roll(block.number + 1);
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5).fulfillRandomWords(
+            1,
+            address(yoyoNft)
+        );
+        vm.stopPrank();
+        assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
+
+    function testFindMyNftsGetter() public {}
 
     // function testConsoleLogStorageSlots() public {
     //     for (uint256 i = 0; i < 20; i++) {
