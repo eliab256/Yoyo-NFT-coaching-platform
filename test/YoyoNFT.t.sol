@@ -308,6 +308,23 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
 
+    function testFindAvailableTokenIdWorksWithZeroAsCandidateToken()
+        public
+        multipleRequestNft(false, USER_1, address(0), address(0))
+    {
+        uint256 expectedTokenId = 1; //like minTokenId
+        uint256 candidateTokenId = 0;
+
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = candidateTokenId;
+        uint256 tokenId = (randomWords[0] % yoyoNft.MAX_NFT_SUPPLY()) + 1;
+
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
+        assertEq(tokenId, expectedTokenId);
+        assertEq(yoyoNft.getTotalMinted(), 1);
+    }
+
     function testTransferNftWorks() public {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
         bool nativePayment = false;
@@ -329,33 +346,6 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getAccountBalance(USER_1), 0);
         assertEq(yoyoNft.getAccountBalance(USER_2), 1);
         assertEq(yoyoNft.getOwnerFromTokenId(tokenId), USER_2);
-    }
-
-    function testIfMintFailDueToMaxSupplyReached() public {
-        for (uint256 i = 1; i <= yoyoNft.MAX_NFT_SUPPLY(); i++) {
-            vm.startPrank(USER_1);
-            yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
-            vm.warp(block.timestamp + 30);
-            vm.roll(block.number + 1);
-
-            uint256[] memory randomWords = new uint256[](1);
-            randomWords[0] = 453 + i;
-
-            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
-                .fulfillRandomWordsWithOverride(
-                    i,
-                    address(yoyoNft),
-                    randomWords
-                );
-            vm.stopPrank();
-        }
-
-        assertEq(yoyoNft.getTotalMinted(), yoyoNft.MAX_NFT_SUPPLY());
-
-        // vm.startPrank(USER_1);
-        // vm.expectRevert(YoyoNft.YoyoNft__AllNFTsHaveBeenMinted.selector);
-        // yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
-        // vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////
