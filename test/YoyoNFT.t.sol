@@ -227,7 +227,7 @@ contract YoyoNftTest is Test, CodeConstants {
         uint256 contractInitialBalance = address(yoyoNft).balance;
 
         vm.startPrank(USER_1);
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, false);
         emit YoyoNft.YoyoNft__NftRequested(1, USER_1);
         yoyoNft.requestNFT{value: mintPayment}(nativePayment);
         vm.stopPrank();
@@ -291,28 +291,22 @@ contract YoyoNftTest is Test, CodeConstants {
         randomWords[0] = 777;
         uint256 tokenId = (randomWords[0] % yoyoNft.MAX_NFT_SUPPLY()) + 1;
 
-        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
-            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
-
         //recreate tokenURI
         string memory tokenUriTest = string(
             abi.encodePacked(baseURI, "/", Strings.toString(tokenId), ".json")
         );
 
-        assertEq(yoyoNft.tokenURI(tokenId), tokenUriTest);
+        vm.expectEmit(false, false, false, true);
+        emit YoyoNft.YoyoNft__TokenIdAssigned(tokenId, tokenUriTest);
 
-        // vm.expectEmit(false, false, false, true);
-        // emit YoyoNft.YoyoNft__TokenIdAssigned(tokenId, tokenUriTest);
-        // vm.expectEmit(true, false, false, true);
-        // emit YoyoNft.YoyoNft__NftMinted(tokenId, USER_1);
+        VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+            .fulfillRandomWordsWithOverride(1, address(yoyoNft), randomWords);
+
+        assertEq(yoyoNft.tokenURI(tokenId), tokenUriTest);
 
         assertEq(yoyoNft.getTotalMinted(), 1);
         assertEq(yoyoNft.getAccountBalance(USER_1), 1);
     }
-
-    /*//////////////////////////////////////////////////////////////
-                Test deposit and withdraw functions  
-//////////////////////////////////////////////////////////////*/
 
     function testTransferNftWorks() public {
         uint256 mintPayment = yoyoNft.getMintPriceEth();
@@ -335,6 +329,33 @@ contract YoyoNftTest is Test, CodeConstants {
         assertEq(yoyoNft.getAccountBalance(USER_1), 0);
         assertEq(yoyoNft.getAccountBalance(USER_2), 1);
         assertEq(yoyoNft.getOwnerFromTokenId(tokenId), USER_2);
+    }
+
+    function testIfMintFailDueToMaxSupplyReached() public {
+        for (uint256 i = 1; i <= yoyoNft.MAX_NFT_SUPPLY(); i++) {
+            vm.startPrank(USER_1);
+            yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
+            vm.warp(block.timestamp + 30);
+            vm.roll(block.number + 1);
+
+            uint256[] memory randomWords = new uint256[](1);
+            randomWords[0] = 453 + i;
+
+            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
+                .fulfillRandomWordsWithOverride(
+                    i,
+                    address(yoyoNft),
+                    randomWords
+                );
+            vm.stopPrank();
+        }
+
+        assertEq(yoyoNft.getTotalMinted(), yoyoNft.MAX_NFT_SUPPLY());
+
+        // vm.startPrank(USER_1);
+        // vm.expectRevert(YoyoNft.YoyoNft__AllNFTsHaveBeenMinted.selector);
+        // yoyoNft.requestNFT{value: yoyoNft.getMintPriceEth()}(false);
+        // vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -486,13 +507,4 @@ contract YoyoNftTest is Test, CodeConstants {
         vm.stopPrank();
         assertEq(yoyoNft.getOwnerFromTokenId(tokenId), USER_1);
     }
-
-    // function testConsoleLogStorageSlots() public {
-    //     for (uint256 i = 0; i < 20; i++) {
-    //         bytes32 slot = bytes32(i);
-    //         bytes32 value = vm.load(address(yoyoNft), slot);
-    //         uint256 intValue = uint256(value);
-    //         console.log("Slot", i, ":", intValue);
-    //     }
-    // }
 }

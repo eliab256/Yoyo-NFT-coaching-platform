@@ -57,11 +57,10 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 indexed requestId,
         address indexed sender
     );
-    event YoyoNft__NftMinted(uint256 indexed tokenId, address minter);
     event YoyoNft__WithdrawCompleted(uint256 amount, uint256 timestamp);
     event YoyoNft__WithdrawIsFailed(uint256 amount, uint256 timestamp);
     event YoyoNft__DepositCompleted(uint256 amount, uint256 timestamp);
-    event YoyoNft__TokenIdAssigned(uint256 tokenId, string tokenUri);
+    event YoyoNft__TokenIdAssigned(uint256 indexed tokenId, string tokenUri);
 
     /* Modifiers */
     modifier yoyoOnlyOwner() {
@@ -183,7 +182,6 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         );
         s_tokenIdToUri[tokenId] = tokenUri;
         emit YoyoNft__TokenIdAssigned(tokenId, tokenUri);
-        emit YoyoNft__NftMinted(tokenId, nftOwner);
     }
 
     function findAvailableTokenId(

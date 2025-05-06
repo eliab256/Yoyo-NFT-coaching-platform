@@ -11,9 +11,15 @@ abstract contract CodeConstants {
     uint256 public constant ANVIL_CHAIN_ID = 31337;
 
     //VRF Mock Inputs
-    uint96 public MOCK_BASE_FEE = 0.25 ether; //base fee
+    //values for native payments
+    uint96 public MOCK_BASE_FEE_LINK = 0.25 ether; //base fee
     uint96 public MOCK_GAS_PRICE_LINK = 1e9; // gas price
     int256 public MOCK_WEI_PER_UNIT_LINK = 4e15; // wei per unit link
+
+    //values for ETH payments
+    uint96 public constant MOCK_BASE_FEE_ETH = 0.0005 ether; //base fee
+    uint96 public constant MOCK_GAS_PRICE_ETH = 20e9; // gas price
+    int256 public constant MOCK_WEI_PER_UNIT_ETH = 4e15; // wei per unit link
 }
 
 contract HelperConfig is Script, CodeConstants {
@@ -90,7 +96,7 @@ contract HelperConfig is Script, CodeConstants {
         vm.startBroadcast();
         //ChainlinkVRF Mock deployment
         VRFCoordinatorV2_5MockWrapper vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5MockWrapper(
-                MOCK_BASE_FEE,
+                MOCK_BASE_FEE_LINK,
                 MOCK_GAS_PRICE_LINK,
                 MOCK_WEI_PER_UNIT_LINK
             );
