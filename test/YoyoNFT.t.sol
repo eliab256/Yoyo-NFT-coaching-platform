@@ -55,7 +55,6 @@ contract YoyoNftTest is Test, CodeConstants {
         // Set up ether balances for each address
         vm.deal(address(yoyoNft), STARTING_BALANCE_YOYO_CONTRACT);
         vm.deal(address(vrfCoordinatorV2_5), STARTING_BALANCE_VRFCOORDINATOR);
-        vm.deal(address(link), STARTING_BALANCE_LINK_CONTRACT);
         vm.deal(deployer, STARING_BALANCE_DEPLOYER);
         vm.deal(USER_1, STARING_BALANCE_PLAYER_1);
         vm.deal(USER_2, STARING_BALANCE_PLAYER_2);
@@ -68,53 +67,14 @@ contract YoyoNftTest is Test, CodeConstants {
                 subscriptionId,
                 STARING_LINK_BALANCE
             );
-            link.mint(address(yoyoNft), STARING_LINK_BALANCE);
-            link.mint(address(vrfCoordinatorV2_5), STARING_LINK_BALANCE);
-            link.mint(address(USER_1), STARING_LINK_BALANCE);
-            link.mint(address(USER_2), STARING_LINK_BALANCE);
         }
-        link.approve(vrfCoordinatorV2_5, STARING_LINK_BALANCE);
+
         vm.stopPrank();
         //balances consolelog
         console2.log("Deployer address:", deployer);
         console2.log("yoyoNft address:", address(yoyoNft));
         console2.log("VRFCoordinator address:", vrfCoordinatorV2_5);
         console2.log("Link address:", address(link));
-        console2.log(
-            "Deployer balance:",
-            deployer.balance,
-            "Link balance:",
-            link.balanceOf(deployer)
-        );
-        console2.log(
-            "VRFCoordinator balance:",
-            address(vrfCoordinatorV2_5).balance,
-            "Link balance:",
-            link.balanceOf(vrfCoordinatorV2_5)
-        );
-        console2.log(
-            "YoyoNft contract balance:",
-            address(yoyoNft).balance,
-            "Link balance:",
-            link.balanceOf(address(yoyoNft))
-        );
-        console2.log(
-            "link contract balance:",
-            address(link).balance,
-            "linkcontract balance of link:",
-            link.balanceOf(address(link))
-        );
-        console2.log(
-            "User 1 balance:",
-            USER_1.balance,
-            "Link balance:",
-            link.balanceOf(USER_1)
-        );
-        console2.log(
-            "get subscription balance",
-            VRFCoordinatorV2_5MockWrapper(vrfCoordinatorV2_5)
-                .getSubscriptionBalance(subscriptionId)
-        );
     }
 
     /*//////////////////////////////////////////////////////////////
