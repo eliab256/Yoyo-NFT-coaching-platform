@@ -22,7 +22,8 @@ contract DeployYoyoNft is Script {
                 config.subscriptionId,
                 config.vrfCoordinatorV2_5
             ) = createSubscription.createSubscription(
-                config.vrfCoordinatorV2_5
+                config.vrfCoordinatorV2_5,
+                config.account
             );
 
             // Fund the subscription
@@ -30,11 +31,12 @@ contract DeployYoyoNft is Script {
             fundSubscription.fundSubscription(
                 config.vrfCoordinatorV2_5,
                 config.subscriptionId,
-                config.link
+                config.link,
+                config.account
             );
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(config.account);
         // Deploy the YoyoNft contract and assign parameters from the config
         YoyoNft yoyoNft = new YoyoNft(
             config.vrfCoordinatorV2_5,
@@ -51,7 +53,8 @@ contract DeployYoyoNft is Script {
         addConsumer.addConsumer(
             address(yoyoNft),
             config.vrfCoordinatorV2_5,
-            config.subscriptionId
+            config.subscriptionId,
+            config.account
         );
 
         return (yoyoNft, helperConfig);
