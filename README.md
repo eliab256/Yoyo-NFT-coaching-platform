@@ -86,6 +86,8 @@ These getter functions facilitate interaction with the YoyoNft contract, allowin
 
 ## 2. Contract Address on Sepolia
 
+0xB7bC9D74681eB832902d1B7464F695F6F9546de7
+
 How to Interact with the Contract
 The project does not include a frontend. Interactions with the deployed smart contract must be done manually via Etherscan.
 

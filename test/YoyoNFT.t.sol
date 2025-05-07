@@ -75,6 +75,7 @@ contract YoyoNftTest is Test, CodeConstants {
         console2.log("yoyoNft address:", address(yoyoNft));
         console2.log("VRFCoordinator address:", vrfCoordinatorV2_5);
         console2.log("Link address:", address(link));
+        console2.log("deployer", deployer);
     }
 
     /*//////////////////////////////////////////////////////////////

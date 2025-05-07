@@ -27,6 +27,7 @@ contract HelperConfig is Script, CodeConstants {
         uint256 callbackGasLimit;
         string baseURI;
         address link;
+        address account;
     }
 
     NetworkConfig public activeNetworkConfig;
@@ -35,9 +36,11 @@ contract HelperConfig is Script, CodeConstants {
     constructor() {
         uint256 subscriptionIdFromEnv = getEnvSubscriptionId();
         string memory baseURIFromEnv = getEnvBaseURI();
+        address accountFromEnv = getAccountFromEnv();
         networkConfigs[SEPOLIA_CHAIN_ID] = getSepoliaEthConfig(
             subscriptionIdFromEnv,
-            baseURIFromEnv
+            baseURIFromEnv,
+            accountFromEnv
         );
     }
 
@@ -66,18 +69,24 @@ contract HelperConfig is Script, CodeConstants {
         return vm.envString("BASE_URI");
     }
 
+    function getAccountFromEnv() public view returns (address) {
+        return vm.envAddress("SEPOLIA_ACCOUNT");
+    }
+
     function getSepoliaEthConfig(
         uint256 _subscriptionId,
-        string memory _baseURI
+        string memory _baseURI,
+        address _account
     ) public pure returns (NetworkConfig memory) {
         return
             NetworkConfig({
                 vrfCoordinatorV2_5: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
                 keyHash: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
                 subscriptionId: _subscriptionId /*"SUBSCRIPTION_ID" from .env*/,
-                callbackGasLimit: 500000,
-                baseURI: _baseURI /*"BASE_URI" from*/,
-                link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+                callbackGasLimit: 300000,
+                baseURI: _baseURI /*"BASE_URI" from .env*/,
+                link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
+                account: _account /*vm.envAddress("SEPOLIA_ACCOUNT")*/
             });
     }
 
@@ -112,7 +121,8 @@ contract HelperConfig is Script, CodeConstants {
             subscriptionId: mockSubscriptionId,
             callbackGasLimit: 300000,
             baseURI: vm.envString("BASE_URI"),
-            link: address(linkToken)
+            link: address(linkToken),
+            account: 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38
         });
 
         return activeNetworkConfig;
