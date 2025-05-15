@@ -12,7 +12,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
  * @title A Yoga NFT collection
  * @author Elia Bordoni
  * @notice This contract is for creating a NFT collection with random features
- * @dev This implements the Chainlink VRF Version 2 and ERC271 standard
+ * @dev This implements the Chainlink VRF Version 2 and ERC721 standard
  */
 
 contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
@@ -29,8 +29,9 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     error YoyoNft__WithdrawFailed();
     error YoyoNft__ThisContractDoesntAcceptDeposit();
     error YoyoNft__CallValidFunctionToInteractWithContract();
-    error YoYoNft__YouAreNotAnNftOwner();
+    error YoyoNft__YouAreNotAnNftOwner();
     error YoyoNft__ContractBalanceIsZero();
+    error YoyoNft__InvalidReceiver();
 
     /* Type declarations */
 
@@ -43,7 +44,6 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     uint32 private constant NUM_WORDS = 1;
     uint256 private s_tokenCounter;
     uint256 public constant MAX_NFT_SUPPLY = 100;
-    uint256 private constant MIN_TOKEN_ID = 1;
     string private s_baseURI;
     address public immutable i_owner;
     uint256 private s_mintPriceEth = 0.002 ether;
@@ -136,6 +136,12 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 tokenId,
         bytes memory data
     ) public {
+        if (msg.sender != ownerOf(tokenId)) {
+            revert YoyoNft__YouAreNotAnNftOwner();
+        }
+        if (to == address(0)) {
+            revert YoyoNft__InvalidReceiver();
+        }
         _safeTransfer(msg.sender, to, tokenId, data);
     }
 
@@ -164,8 +170,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256[] calldata _randomWords
     ) internal override {
         address nftOwner = s_requestIdToSender[_requestId];
-        uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY) +
-            MIN_TOKEN_ID;
+        uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY);
         uint256 tokenId = findAvailableTokenId(candidateTokenId);
         s_tokensMinted[tokenId] = true;
         s_tokenCounter++;
@@ -186,12 +191,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
             if (!s_tokensMinted[_candidateTokenId]) {
                 return _candidateTokenId;
             }
-            _candidateTokenId =
-                (_candidateTokenId % MAX_NFT_SUPPLY) +
-                MIN_TOKEN_ID;
-            if (_candidateTokenId == 0) {
-                _candidateTokenId = MIN_TOKEN_ID;
-            }
+            _candidateTokenId = (_candidateTokenId % MAX_NFT_SUPPLY);
         }
         revert YoyoNft__AllNFTsHaveBeenMinted();
     }
@@ -199,7 +199,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
-        if (tokenId < MIN_TOKEN_ID || tokenId > MAX_NFT_SUPPLY) {
+        if (tokenId < 0 || tokenId >= MAX_NFT_SUPPLY) {
             revert YoyoNft__TokenIdDoesNotExist();
         }
         if (s_tokensMinted[tokenId] == false) {
@@ -212,11 +212,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256 count = 0;
         uint256[] memory temporaryTokenIds = new uint256[](s_tokenCounter);
 
-        for (
-            uint256 tokenId = MIN_TOKEN_ID;
-            tokenId <= MAX_NFT_SUPPLY;
-            tokenId++
-        ) {
+        for (uint256 tokenId = 0; tokenId <= MAX_NFT_SUPPLY; tokenId++) {
             if (s_tokensMinted[tokenId]) {
                 try this.ownerOf(tokenId) returns (address owner) {
                     if (owner == msg.sender) {
@@ -230,7 +226,7 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         }
 
         if (count == 0) {
-            revert YoYoNft__YouAreNotAnNftOwner();
+            revert YoyoNft__YouAreNotAnNftOwner();
         }
 
         uint256[] memory finalTokenIds = new uint256[](count);
