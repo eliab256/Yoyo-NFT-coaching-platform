@@ -170,8 +170,13 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
         uint256[] calldata _randomWords
     ) internal override {
         address nftOwner = s_requestIdToSender[_requestId];
+        uint256 tokenId;
         uint256 candidateTokenId = (_randomWords[0] % MAX_NFT_SUPPLY);
-        uint256 tokenId = findAvailableTokenId(candidateTokenId);
+        if (!s_tokensMinted[candidateTokenId]) {
+            tokenId = candidateTokenId;
+        } else {
+            tokenId = findAvailableTokenId(candidateTokenId);
+        }
         s_tokensMinted[tokenId] = true;
         s_tokenCounter++;
 
@@ -187,11 +192,13 @@ contract YoyoNft is ERC721, VRFConsumerBaseV2Plus {
     function findAvailableTokenId(
         uint256 _candidateTokenId
     ) internal view returns (uint256) {
+        uint256 startTokenId = (_candidateTokenId + 1) % MAX_NFT_SUPPLY;
+        uint256 currentTokenId = startTokenId;
         for (uint256 i = 0; i < MAX_NFT_SUPPLY; i++) {
-            if (!s_tokensMinted[_candidateTokenId]) {
-                return _candidateTokenId;
+            if (!s_tokensMinted[currentTokenId]) {
+                return currentTokenId;
             }
-            _candidateTokenId = (_candidateTokenId % MAX_NFT_SUPPLY);
+            currentTokenId = ((currentTokenId + 1) % MAX_NFT_SUPPLY);
         }
         revert YoyoNft__AllNFTsHaveBeenMinted();
     }
